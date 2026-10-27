@@ -1,0 +1,304 @@
+﻿[
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "pnr-verify",
+        "templateEn":  "Dear team, could you kindly verify whether the PNR for this booking is correct?",
+        "trigger":  "::pnr",
+        "category":  "PNR \u0026 Перевірка",
+        "templateUa":  "Шановна команда, чи не могли б ви перевірити, чи правильний номер PNR для цього бронювання?",
+        "titleUa":  "Перевірка коректності PNR",
+        "descriptionUa":  "Запит партнеру щодо правильності номера PNR для бронювання.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "alt-refund",
+        "templateEn":  "The alternative option is not suitable for the passenger. Kindly refund the full amount.",
+        "trigger":  "::ref",
+        "category":  "Повернення \u0026 Зміни",
+        "templateUa":  "Цей варіант пасажиру не підходить. Будь ласка, поверніть повну суму.",
+        "titleUa":  "Альтернатива не підходить / Повне повернення",
+        "descriptionUa":  "Пасажир відхиляє запропоновану альтернативу, запит на повне повернення коштів.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+                             "CORRECT_DATE",
+                             "INCORRECT_DATE"
+                         ],
+        "id":  "wrong-date-issued",
+        "templateEn":  "Please kindly check the information — the ticket should have been issued for [CORRECT_DATE], but it was issued for [INCORRECT_DATE].",
+        "trigger":  "::dat",
+        "category":  "Помилки \u0026 Виписка",
+        "templateUa":  "Будь ласка, перевірте інформацію — квиток мав бути оформлений на [CORRECT_DATE], але його оформили на [INCORRECT_DATE].",
+        "titleUa":  "Квиток оформлено не на ту дату",
+        "descriptionUa":  "Повідомлення про помилку у виписаній даті квитка із зазначенням правильної.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "denied-boarding",
+        "templateEn":  "Dear team, the passenger reports that they were not allowed to board the flight. Please urgently verify this information.",
+        "trigger":  "::den",
+        "category":  "Терміново / Проблеми",
+        "templateUa":  "Шановна команда, пасажир повідомляє, що йому не дозволили сісти на борт літака. Просимо терміново перевірити цю інформацію.",
+        "titleUa":  "Пасажира не пустили на борт (Терміново)",
+        "descriptionUa":  "Термінова перевірка інформації про відмову в посадці пасажиру.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "bt-pnr",
+        "templateEn":  "Dear team, please provide the BT PNR for check-in.",
+        "trigger":  "::btp",
+        "category":  "Реєстрація \u0026 Доступ",
+        "templateUa":  "Шановна команда, будь ласка, надайте номер PNR від BT для реєстрації.",
+        "titleUa":  "Надати BT PNR для реєстрації",
+        "descriptionUa":  "Запит номера PNR авіакомпанії airBaltic (BT) для проходження чекіну.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "suspend-issuance",
+        "templateEn":  "Dear team, please suspend the ticket issuance immediately.",
+        "trigger":  "::stp",
+        "category":  "Терміново / Проблеми",
+        "templateUa":  "Шановна команда, прошу негайно призупинити видачу квитків.",
+        "titleUa":  "Призупинити видачу квитків (Терміново)",
+        "descriptionUa":  "Негайна вимога зупинити виписку квитка в черзі.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "access-credentials",
+        "templateEn":  "Dear Team, could you please provide the email address and phone number that can be used to access the booking? Thank you.",
+        "trigger":  "::eml",
+        "category":  "Реєстрація \u0026 Доступ",
+        "templateUa":  "Чи не могли б ви надати адресу електронної пошти та номер телефону, які можна використовувати для доступу до бронювання?",
+        "titleUa":  "Email та телефон для доступу до бронювання",
+        "descriptionUa":  "Запит контактних даних агента, використаних під час створення замовлення.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "wait-moment",
+        "templateEn":  "Please wait a moment while we verify this information with the passenger.",
+        "trigger":  "::wai",
+        "category":  "Комунікація",
+        "templateUa":  "Будь ласка, зачекайте хвилину, поки ми перевіримо цю інформацію у пасажира.",
+        "titleUa":  "Зачекайте, перевіряємо у пасажира",
+        "descriptionUa":  "Стандартна пауза для узгодження деталей з клієнтом.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "booking-cancelled-web",
+        "templateEn":  "Dear team, the booking appears as cancelled on the airline\u0027s website. Could you please check and verify this information?",
+        "trigger":  "::ccl",
+        "category":  "Терміново / Проблеми",
+        "templateUa":  "Шановна команда, бронювання відображається як скасоване на сайті авіакомпанії. Чи не могли б ви перевірити цю інформацію?",
+        "titleUa":  "Бронювання скасоване на сайті АК",
+        "descriptionUa":  "Запит перевірки, чому бронювання відображається скасованим на сайті авіакомпанії.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "tickets-inactive",
+        "templateEn":  "Dear team, the passenger claims that their tickets are inactive. Please check this urgently and resolve the issue immediately.",
+        "trigger":  "::ina",
+        "category":  "Терміново / Проблеми",
+        "templateUa":  "Шановна команда, пасажир стверджує, що його квитки неактивні. Будь ласка, перевірте це терміново та виправте ситуацію.",
+        "titleUa":  "Квитки неактивні (Терміново)",
+        "descriptionUa":  "Терміновий запит щодо неактивного статусу електронних квитків пасажира.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "wrong-date-rectify",
+        "templateEn":  "Dear team, the tickets were issued for the wrong date, although we provided the correct details. Could you please check and rectify this?",
+        "trigger":  "::wdt",
+        "category":  "Помилки \u0026 Виписка",
+        "templateUa":  "Шановна команда, квитки виписані не на ту дату, хоча ми надали правильні дані. Чи не могли б ви перевірити та виправити це?",
+        "titleUa":  "Квитки виписані не на ту дату (Виправлення)",
+        "descriptionUa":  "Запит на термінове виправлення дати виписаного квитка відповідно до наданих даних.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "pnr-photo-confirm",
+        "templateEn":  "Dear team, could you please provide a screenshot/photo confirmation showing that the PNR is active and in order?",
+        "trigger":  "::pic",
+        "category":  "PNR \u0026 Перевірка",
+        "templateUa":  "Шановна команда, чи не могли б ви надати скріншот/фотопідтвердження того, що PNR активний і все в порядку?",
+        "titleUa":  "Скріншот / Фотопідтвердження PNR",
+        "descriptionUa":  "Запит скріншота з системи бронювання про те, що з PNR все добре.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "ryanair-fr-email",
+        "templateEn":  "Dear team, could you please provide the email address used for this booking so we can complete the check-in on the FR (Ryanair) website?",
+        "trigger":  "::frm",
+        "category":  "Реєстрація \u0026 Доступ",
+        "templateUa":  "Шановна команда, чи не могли б ви надати email-адресу, використану для цього бронювання, щоб ми могли пройти реєстрацію на сайті Ryanair (FR)?",
+        "titleUa":  "Пошта для реєстрації на сайті Ryanair (FR)",
+        "descriptionUa":  "Запит адреси електронної пошти консолідатора для чекіну на Ryanair.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "bag-15kg",
+        "templateEn":  "Dear team, could you please check if it is possible to add 15kg of checked baggage to this booking, and advise on the price?",
+        "trigger":  "::15k",
+        "category":  "Багаж",
+        "templateUa":  "Шановна команда, чи не могли б ви перевірити, чи можливо додати 15 кг зареєстрованого багажу до цього бронювання, та підказати вартість?",
+        "titleUa":  "Додати 15 кг багажу + ціна",
+        "descriptionUa":  "Запит вартості та можливості додати 15 кг зареєстрованого багажу.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "bag-20kg",
+        "templateEn":  "Dear team, could you please check if it is possible to add 20kg of checked baggage to this booking, and advise on the price?",
+        "trigger":  "::20k",
+        "category":  "Багаж",
+        "templateUa":  "Шановна команда, чи не могли б ви перевірити, чи можливо додати 20 кг зареєстрованого багажу до цього бронювання, та підказати вартість?",
+        "titleUa":  "Додати 20 кг багажу + ціна",
+        "descriptionUa":  "Запит вартості та можливості додати 20 кг зареєстрованого багажу.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "bag-25kg",
+        "templateEn":  "Dear team, could you please check if it is possible to add 25kg of checked baggage to this booking, and advise on the price?",
+        "trigger":  "::25k",
+        "category":  "Багаж",
+        "templateUa":  "Шановна команда, чи не могли б ви перевірити, чи можливо додати 25 кг зареєстрованого багажу до цього бронювання, та підказати вартість?",
+        "titleUa":  "Додати 25 кг багажу + ціна",
+        "descriptionUa":  "Запит вартості та можливості додати 25 кг зареєстрованого багажу.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "bag-10kg-chk",
+        "templateEn":  "Dear team, could you please check if it is possible to add 10kg of checked baggage to this booking, and advise on the price?",
+        "trigger":  "::10k",
+        "category":  "Багаж",
+        "templateUa":  "Шановна команда, чи не могли б ви перевірити, чи можливо додати 10 кг зареєстрованого багажу до цього бронювання, та підказати вартість?",
+        "titleUa":  "Додати 10 кг багажу + ціна",
+        "descriptionUa":  "Запит вартості та можливості додати 10 кг зареєстрованого багажу.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "cabin-bag-8-10",
+        "templateEn":  "Dear team, could you please check if it is possible to add an 8–10kg cabin bag (carry-on) to this booking, and advise on the price?",
+        "trigger":  "::cab",
+        "category":  "Багаж",
+        "templateUa":  "Шановна команда, чи не могли б ви перевірити, чи можливо додати 8–10 кг ручної поклажі (carry-on) до цього бронювання, та підказати вартість?",
+        "titleUa":  "Додати 8–10 кг ручної поклажі + ціна",
+        "descriptionUa":  "Запит додавання великої ручної поклажі (carry-on / priority).",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+
+                         ],
+        "id":  "seat-xl",
+        "templateEn":  "Dear team, could you please check if it is possible to add an XL (extra legroom) seat to this booking, and advise on the price?",
+        "trigger":  "::sxl",
+        "category":  "Місця \u0026 Послуги",
+        "templateUa":  "Шановна команда, чи не могли б ви перевірити, чи можливо додати місце XL (зі збільшеним простором для ніг) до цього бронювання, та повідомити вартість?",
+        "titleUa":  "Додати місце XL (Extra Legroom) + ціна",
+        "descriptionUa":  "Запит вартості та вибору місця з додатковим простором для ніг.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+                             "SEAT_NUMBER"
+                         ],
+        "id":  "seat-specific",
+        "templateEn":  "Dear team, could you please check if it is possible to add a specific seat ([SEAT_NUMBER]) to this booking, and advise on the price?",
+        "trigger":  "::set",
+        "category":  "Місця \u0026 Послуги",
+        "templateUa":  "Шановна команда, чи не могли б ви перевірити, чи можливо закріпити конкретне місце ([SEAT_NUMBER]) за цим бронюванням, та повідомити вартість?",
+        "titleUa":  "Додати конкретне місце + ціна",
+        "descriptionUa":  "Запит закріплення певного номеру місця в салоні за пасажиром.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+                             "MEAL_TYPE"
+                         ],
+        "id":  "meal-add",
+        "templateEn":  "Dear team, could you please check if it is possible to add a meal ([MEAL_TYPE]) to this booking, and advise on the price?",
+        "trigger":  "::mel",
+        "category":  "Місця \u0026 Послуги",
+        "templateUa":  "Шановна команда, чи не могли б ви перевірити, чи можливо додати харчування ([MEAL_TYPE]) до цього бронювання, та повідомити вартість?",
+        "titleUa":  "Додати харчування + ціна",
+        "descriptionUa":  "Запит спеціального або стандартного харчування на рейсі.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+                             "PNR",
+                             "REQUEST_DETAILS"
+                         ],
+        "id":  "universal-request",
+        "templateEn":  "Dear team, regarding booking [PNR]: could you please assist with the following request — [REQUEST_DETAILS]? Thank you in advance.",
+        "trigger":  "::req",
+        "category":  "Комунікація",
+        "templateUa":  "Шановна команда, щодо бронювання [PNR]: чи не могли б ви допомогти з наступним запитом — [REQUEST_DETAILS]? Дякуємо заздалегідь.",
+        "titleUa":  "Універсальний початок запиту",
+        "descriptionUa":  "Гнучкий шаблон для оформлення довільного запиту партнерам з номером PNR.",
+        "target":  "partners"
+    },
+    {
+        "placeholders":  [
+                             "OLD_ORDER_ID",
+                             "NEW_ORDER_ID"
+                         ],
+        "id":  "pk-fire-bg",
+        "templateEn":  "PK FIRE BG\nOld order: [OLD_ORDER_ID]\nNew unpaid: [NEW_ORDER_ID]\nPlease update the amount to pay. Thank you!",
+        "trigger":  "::pkf",
+        "category":  "Фінанси / PK FIRE",
+        "templateUa":  "PK FIRE BG\nOld order: [OLD_ORDER_ID]\nNew unpaid: [NEW_ORDER_ID]\nPlease update the amount to pay. Thank you!",
+        "titleUa":  "PK FIRE BG — оновлення суми до оплати",
+        "descriptionUa":  "Запит на зміну суми до оплати в системі PK FIRE між старим і новим замовленням.",
+        "target":  "partners"
+    }
+]

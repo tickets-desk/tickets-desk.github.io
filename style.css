@@ -1,0 +1,162 @@
+/* Tickets UA Agent Dashboard Custom Styles */
+
+@layer utilities {
+  .squircle {
+    border-radius: 1.25rem;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.4);
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(75, 85, 99, 0.6);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(107, 114, 128, 0.7);
+}
+
+/* Card hover animation with clean depth and zero-lag hardware acceleration */
+.airline-card {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 215px;
+  transform: translateZ(0);
+  will-change: transform;
+  transition: transform 0.16s ease-out, 
+              box-shadow 0.16s ease-out, 
+              border-color 0.16s ease-out;
+}
+
+.airline-card:hover {
+  transform: translateY(-3px) translateZ(0);
+  box-shadow: 0 10px 22px -6px rgba(14, 165, 233, 0.16), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  border-color: rgba(56, 189, 248, 0.6) !important;
+}
+
+.dark .airline-card:hover {
+  box-shadow: 0 10px 22px -6px rgba(14, 165, 233, 0.22), 0 2px 6px -1px rgba(0, 0, 0, 0.3);
+  border-color: rgba(56, 189, 248, 0.5) !important;
+}
+
+/* Card Logo Hover Micro-interaction */
+.airline-logo-box {
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.airline-card:hover .airline-logo-box {
+  transform: scale(1.06);
+  border-color: rgba(14, 165, 233, 0.3);
+}
+
+.airline-logo-img {
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.airline-card:hover .airline-logo-img {
+  transform: scale(1.05);
+}
+
+/* Star Button Micro-interaction */
+.btn-star-fav {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.15s ease, background-color 0.15s ease;
+}
+
+.btn-star-fav:hover {
+  transform: scale(1.22) rotate(-10deg);
+}
+
+.btn-star-fav:active {
+  transform: scale(0.92);
+}
+
+/* 3-dots Menu Button Micro-interaction */
+.btn-dots-menu {
+  transition: transform 0.18s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.btn-dots-menu:hover {
+  transform: scale(1.15);
+}
+
+.btn-dots-menu:active {
+  transform: scale(0.92);
+}
+
+/* Bottom Action Buttons (Manage & Check-in) */
+.btn-card-action {
+  transition: transform 0.16s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.16s ease;
+}
+
+.btn-card-action:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 10px -2px rgba(14, 165, 233, 0.25);
+}
+
+.btn-card-action:active {
+  transform: scale(0.96) translateY(0);
+}
+
+.btn-card-action .btn-icon-shift {
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-card-action:hover .btn-icon-shift {
+  transform: translateX(2.5px) translateY(-1px);
+}
+
+.btn-card-action .btn-icon-rotate {
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-card-action:hover .btn-icon-rotate {
+  transform: rotate(12deg) scale(1.12);
+}
+
+/* Template item hover */
+.template-item-btn {
+  transition: transform 0.16s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.template-item-btn:hover {
+  transform: translateX(3px);
+}
+
+/* Pulse highlight for copied text */
+@keyframes copyPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.025); }
+  100% { transform: scale(1); }
+}
+
+.copy-pulse {
+  animation: copyPulse 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Dropdown list transition */
+.dropdown-animate {
+  animation: dropdownFade 0.15s ease-out;
+}
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

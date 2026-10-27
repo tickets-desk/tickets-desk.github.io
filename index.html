@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="uk" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tickets UA • Support Agent Dashboard</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230284c7'><path d='M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z'/></svg>">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              900: '#0c4a6e'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- Tesseract.js for In-Browser Screenshot OCR (Client-Side) -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="h-full flex flex-col bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 transition-colors duration-200 antialiased font-sans">
+
+  <!-- Top App Navigation Bar -->
+  <header class="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      
+      <!-- Left: Brand & Main Navigation Tabs Grouped Together -->
+      <div class="flex items-center gap-4 sm:gap-6 overflow-x-auto">
+        <!-- Brand & Title -->
+        <div id="brandLogoDevTrigger" class="flex items-center gap-3 shrink-0 cursor-pointer select-none" title="TICKETS UA Agent Desk">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-600 to-cyan-500 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
+            <i data-lucide="plane" class="w-5 h-5 stroke-[2.2]"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-base font-extrabold tracking-tight bg-gradient-to-r from-sky-600 to-cyan-600 dark:from-sky-400 dark:to-cyan-300 bg-clip-text text-transparent">
+                TICKETS UA
+              </span>
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                Agent Desk
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">Внутрішній робочий інструмент</p>
+          </div>
+        </div>
+
+        <div class="hidden md:block h-6 w-px bg-slate-200 dark:bg-slate-700 shrink-0"></div>
+
+        <!-- Main Navigation Tabs (Moved to Left!) -->
+        <nav class="flex items-center p-1 rounded-2xl bg-slate-100 dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60 shrink-0">
+          <button data-tab-target="directory" 
+                  class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold transition-all bg-sky-600 text-white shadow-sm">
+            <i data-lucide="globe" class="w-4 h-4"></i>
+            <span>Manage Booking</span>
+            <span id="airlinesCount" class="ml-1 px-1.5 py-0.2 rounded-full text-[11px] bg-sky-700 text-sky-100">64</span>
+          </button>
+
+          <button data-tab-target="templates" 
+                  class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700/60">
+            <i data-lucide="message-square-code" class="w-4 h-4"></i>
+            <span>Скрипти й шаблони</span>
+            <span id="templatesCount" class="ml-1 px-1.5 py-0.2 rounded-full text-[11px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">23</span>
+          </button>
+
+          <button data-tab-target="altparser" 
+                  class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl text-sm font-semibold transition-all text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700/60">
+            <i data-lucide="scan-line" class="w-4 h-4 text-amber-500"></i>
+            <span>Парсер альтів</span>
+            <span class="ml-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300">NEW</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Right Actions: Theme Toggle -->
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="themeToggle" 
+                class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                title="Перемкнути тему (Світла / Темна)">
+          <i id="themeIcon" data-lucide="moon" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Main Workspace Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col relative z-10">
+
+    <!-- ============================================== -->
+    <!-- TAB 1: MANAGE BOOKING DIRECTORY (Каталог АК)    -->
+    <!-- ============================================== -->
+    <section id="directorySection" class="flex flex-col flex-1 space-y-6">
+      
+      <!-- Top Action Bar with Instant Search & Star Favorites Filter -->
+      <div class="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+        
+        <!-- Left: Search Input & Favorites Toggle Pills -->
+        <div class="flex flex-wrap items-center gap-3 flex-1">
+          <!-- Search Input -->
+          <div class="relative w-full sm:max-w-md">
+            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <i data-lucide="search" class="w-4 h-4"></i>
+            </div>
+            <input type="text" 
+                   id="airlineSearchInput"
+                   placeholder="Швидкий пошук авіакомпанії за назвою або кодом IATA (наприклад Ryanair, FR, LOT)..." 
+                   class="w-full pl-10 pr-20 py-2.5 rounded-xl text-sm bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-700/80 text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all shadow-xs" />
+            
+            <div class="absolute inset-y-0 right-0 pr-3 flex items-center gap-1.5">
+              <button id="airlineSearchClear" class="hidden text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <i data-lucide="x" class="w-4 h-4"></i>
+              </button>
+              <kbd class="hidden md:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded">
+                /
+              </kbd>
+            </div>
+          </div>
+
+          <!-- Quick Filter Pills: All vs Starred Favorites -->
+          <div class="flex items-center p-1 rounded-xl bg-slate-100 dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-700/80 shrink-0">
+            <button id="filterAllBtn" 
+                    onclick="setAirlineFavoritesFilter(false)" 
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-xs">
+              Усі АК
+            </button>
+            <button id="filterFavsBtn" 
+                    onclick="setAirlineFavoritesFilter(true)" 
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-600 dark:text-slate-300 hover:text-amber-500">
+              <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400 fill-amber-400"></i>
+              <span>Закріплені</span>
+              <span id="favsCountBadge" class="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter Count & Quick Add Button -->
+        <div class="flex items-center gap-3 justify-between md:justify-end shrink-0">
+          <span id="filteredAirlinesCount" class="text-xs font-medium text-slate-500 dark:text-slate-400">
+            Завантаження авіакомпаній...
+          </span>
+
+          <button onclick="openAddAirlineModal()"
+                  class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-sky-50 dark:bg-sky-950/50 border border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/60 transition-colors">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Додати АК</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Airlines Grid Container -->
+      <div id="airlinesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <!-- Rendered dynamically via app.js -->
+      </div>
+
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 2: QUICK SCRIPTS & TEMPLATES (Генератор)  -->
+    <!-- ============================================== -->
+    <section id="templatesSection" class="hidden flex flex-col flex-1 space-y-5">
+      
+      <!-- Top Target Audience Subtabs & Add Custom Template Button -->
+      <div class="flex flex-wrap items-center justify-between gap-3 p-1.5 rounded-2xl bg-slate-100/90 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80">
+        <div class="flex items-center gap-1.5">
+          <button id="targetTabPartnersBtn"
+                  onclick="setTemplateTargetTab('partners')"
+                  class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 shadow-xs border border-slate-200/60 dark:border-slate-700/60">
+            <i data-lucide="handshake" class="w-4 h-4"></i>
+            <span>ЗАПИТИ ПАРТНЕРАМ</span>
+            <span id="targetPartnersCount" class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300">23</span>
+          </button>
+          <button id="targetTabCallCenterBtn"
+                  onclick="setTemplateTargetTab('callcenter')"
+                  class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100">
+            <i data-lucide="headphones" class="w-4 h-4"></i>
+            <span>ЗАПИТИ НА КЦ</span>
+            <span id="targetCallCenterCount" class="px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400">0</span>
+          </button>
+        </div>
+
+        <button onclick="openAddTemplateModal()"
+                class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white shadow-xs transition-all active:scale-95">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>➕ Додати свій шаблон</span>
+        </button>
+      </div>
+
+      <!-- Interactive Trigger Bar & Command Search -->
+      <div class="relative">
+        <div class="relative p-2 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-xs focus-within:ring-2 focus-within:ring-sky-500 focus-within:border-sky-500 transition-all">
+          <div class="flex items-center gap-3 px-3">
+            <div class="px-2 py-1 rounded-lg bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300 font-mono text-xs font-bold shrink-0">
+              ::command
+            </div>
+            <input type="text" 
+                   id="triggerBarInput"
+                   placeholder="Введіть тригер команди (наприклад ::pnr, ::ref, ::15k, ::pkf) або ключове слово..." 
+                   autocomplete="off"
+                   class="w-full py-2 bg-transparent text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none" />
+            <kbd class="hidden md:inline-flex items-center px-2 py-0.5 text-[11px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-700 rounded-md">
+              Стрілки ↑↓ + Enter
+            </kbd>
+          </div>
+        </div>
+
+        <!-- Floating Autocomplete Trigger Dropdown -->
+        <div id="triggerDropdown" 
+             class="hidden absolute top-full left-0 right-0 mt-2 z-40 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden dropdown-animate max-h-72 overflow-y-auto">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- Category Filter Pills -->
+      <div id="templateCategories" class="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <!-- Populated dynamically via JS -->
+      </div>
+
+      <!-- Main Split Layout: Templates List & Interactive Workspace -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 items-start">
+        
+        <!-- Left Column: Available Templates List (4 cols) -->
+        <div class="lg:col-span-4 flex flex-col space-y-3">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+              Список шаблонів
+            </span>
+            <span class="text-[11px] text-slate-600 dark:text-slate-300">
+              Клікніть для вибору
+            </span>
+          </div>
+          
+          <div id="templatesList" class="flex flex-col space-y-2 max-h-[600px] overflow-y-auto pr-1">
+            <!-- Populated dynamically via JS -->
+          </div>
+        </div>
+
+        <!-- Right Column: Interactive Editor & Output Workspace (8 cols) -->
+        <div class="lg:col-span-8 flex flex-col rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden min-h-[500px]">
+          <div id="templateWorkspace" class="flex-1 flex flex-col">
+            <!-- Populated dynamically via JS -->
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ============================================== -->
+    <!-- TAB 3: FLIGHT ALTERNATIVE PARSER (Альти OCR)   -->
+    <!-- ============================================== -->
+    <section id="altParserSection" class="hidden flex flex-col flex-1 space-y-6">
+      
+      <!-- Top Banner / Guide -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-xs">
+        <div>
+          <h2 class="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <i data-lucide="scan-text" class="w-5 h-5 text-sky-500"></i>
+            <span>Парсер альтернатив (Альти зі скріншота)</span>
+          </h2>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            Зробіть скріншот рейсу в кабінеті АК, натисніть <kbd class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 font-mono text-[11px] font-bold text-sky-600 dark:text-sky-400">Ctrl + V</kbd> або перетягніть картинку сюди — система автоматично витягне дату, рейс, час і маршрут у 100% точний рядок.
+          </p>
+        </div>
+        
+        <div class="flex items-center gap-2 shrink-0">
+          <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+            <i data-lucide="zap" class="w-3.5 h-3.5 text-emerald-500"></i>
+            <span>Вставка скріна (Ctrl + V)</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Main Grid: Dropzone & Image (Left) & Parsed Result (Right) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- Left Column: Upload / Paste Dropzone (5 cols) -->
+        <div class="lg:col-span-5 flex flex-col space-y-4">
+          
+          <!-- Interactive Paste/Drop Zone -->
+          <div id="altDropZone" 
+               onclick="document.getElementById('altFileInput').click()"
+               ondragover="handleAltDragOver(event)"
+               ondragleave="handleAltDragLeave(event)"
+               ondrop="handleAltDrop(event)"
+               class="relative border-2 border-dashed border-sky-300 dark:border-sky-700/70 hover:border-sky-500 dark:hover:border-sky-500 rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center text-center cursor-pointer bg-sky-50/40 dark:bg-sky-950/20 hover:bg-sky-50/80 dark:hover:bg-sky-950/40 transition-all group">
+            
+            <input type="file" id="altFileInput" accept="image/*" class="hidden" onchange="handleAltFileSelect(event)" />
+
+            <div class="w-14 h-14 rounded-2xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center text-sky-600 dark:text-sky-400 mb-3 group-hover:scale-105 transition-transform">
+              <i data-lucide="clipboard-paste" class="w-7 h-7"></i>
+            </div>
+
+            <h4 class="text-sm font-bold text-slate-800 dark:text-slate-200">
+              Натисніть <span class="text-sky-600 dark:text-sky-400">Ctrl + V</span> для вставки скріна
+            </h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs">
+              або перетягніть картинку сюди чи клікніть для вибору файлу
+            </p>
+
+            <div class="mt-4 flex items-center gap-2 text-[11px] text-slate-400">
+              <i data-lucide="image" class="w-3.5 h-3.5"></i>
+              <span>Будь-який скріншот рейсу або альти</span>
+            </div>
+          </div>
+
+          <!-- Image Preview & Status (Shown when image loaded) -->
+          <div id="altImagePreviewContainer" class="hidden flex flex-col rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <i data-lucide="image" class="w-4 h-4 text-sky-500"></i>
+                <span>Завантажений скріншот</span>
+              </span>
+              <button onclick="clearAltImage()" class="text-xs text-rose-500 hover:text-rose-600 font-semibold flex items-center gap-1">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                <span>Очистити</span>
+              </button>
+            </div>
+
+            <div class="relative max-h-52 overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+              <img id="altImagePreview" src="" alt="Скріншот альти" class="max-h-52 w-auto object-contain rounded-lg" />
+            </div>
+
+            <!-- Progress Bar for OCR -->
+            <div id="altOcrProgressContainer" class="hidden space-y-1.5 pt-1">
+              <div class="flex items-center justify-between text-xs">
+                <span id="altOcrStatusText" class="font-medium text-sky-600 dark:text-sky-400 flex items-center gap-1.5">
+                  <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
+                  <span>Вичитування рейсу (OCR)...</span>
+                </span>
+                <span id="altOcrPercent" class="font-mono text-slate-500">0%</span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+                <div id="altOcrProgressBar" class="h-full bg-gradient-to-r from-sky-500 to-cyan-500 transition-all duration-200" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Alternative Raw Text Paste -->
+          <div class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 p-4">
+            <div class="flex items-center justify-between mb-1.5">
+              <label for="altRawTextInput" class="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                📝 Або вставте текст рейсу сюди:
+              </label>
+              <button onclick="parseAltRawText()" class="text-[11px] text-sky-600 dark:text-sky-400 hover:text-sky-500 font-bold">Обробити ➔</button>
+            </div>
+            <textarea id="altRawTextInput" 
+                      rows="3" 
+                      oninput="onAltRawTextInput(this.value)"
+                      placeholder="Наприклад: Airbus A321neo (operated by Wizz Air Malta) Sat, 31 Oct 2026 05:55-08:45 Tirana Brussels Charleroi..."
+                      class="w-full p-2.5 text-xs font-mono rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 resize-none"></textarea>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Parsed String & Interactive Fields (7 cols) -->
+        <div class="lg:col-span-7 flex flex-col space-y-4">
+          
+          <!-- Generated Single Line Banner (The User's Goal!) -->
+          <div class="p-6 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-lg border border-slate-700 flex flex-col space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-sky-400 flex items-center gap-1.5">
+                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+                <span>Готовий рядок альти (для вставки в чат / партнеру)</span>
+              </span>
+              <span class="text-[11px] text-emerald-400 font-mono font-bold">100% точний</span>
+            </div>
+
+            <!-- The Result Line Box -->
+            <div class="relative group">
+              <div id="altResultLineDisplay" 
+                   class="p-4 rounded-xl bg-slate-950/90 border border-sky-500/50 font-mono text-sm sm:text-base font-bold text-sky-200 select-all tracking-wide break-words shadow-inner">
+                Вставте скріншот (Ctrl + V) або введіть рейс...
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-700/60">
+              <div class="text-[11px] text-slate-400 flex items-center gap-1">
+                <i data-lucide="info" class="w-3.5 h-3.5 text-sky-400"></i>
+                <span>Натисніть кнопку або <strong>Ctrl + Enter</strong></span>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <button id="copyAltResultBtn"
+                        onclick="copyAltResultLine()"
+                        class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-sky-500 hover:bg-sky-400 active:bg-sky-600 text-white shadow-md hover:shadow-sky-500/20 transition-all active:scale-[0.98]">
+                  <i data-lucide="copy" class="w-4 h-4"></i>
+                  <span id="copyAltResultBtnText">Скопіювати рядок</span>
+                </button>
+                
+                <button onclick="insertAltIntoTemplate()"
+                        title="Вставити цей рейс у генератор скриптів"
+                        class="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 transition-colors">
+                  <i data-lucide="send" class="w-3.5 h-3.5 text-sky-400"></i>
+                  <span>У шаблон</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive 4-Field Adjustment Form (For 100% Accuracy) -->
+          <div class="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 shadow-xs space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                <i data-lucide="sliders" class="w-4 h-4 text-sky-500"></i>
+                <span>Поля рейсу (миттєве коригування за потреби)</span>
+              </h4>
+              <span class="text-[11px] text-slate-400">Зміна поля оновлює рядок на льоту</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  📅 Дата вильоту:
+                </label>
+                <input type="text" 
+                       id="altFieldDate" 
+                       value=""
+                       placeholder="напр. 31.10.2026" 
+                       oninput="onAltFieldChange()"
+                       class="w-full px-3 py-2 text-xs font-mono font-bold rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  ✈️ Номер рейсу / АК:
+                </label>
+                <input type="text" 
+                       id="altFieldFlight" 
+                       value=""
+                       placeholder="напр. W45131 або LO149 / EY712" 
+                       oninput="onAltFieldChange()"
+                       class="w-full px-3 py-2 text-xs font-mono font-bold uppercase rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  ⏰ Час вильоту – прильоту:
+                </label>
+                <input type="text" 
+                       id="altFieldTime" 
+                       value=""
+                       placeholder="напр. 05:55-08:45 або 17:35-12:45 (+1d)" 
+                       oninput="onAltFieldChange()"
+                       class="w-full px-3 py-2 text-xs font-mono font-bold rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  📍 Маршрут (Звідки – Куди):
+                </label>
+                <input type="text" 
+                       id="altFieldRoute" 
+                       value=""
+                       placeholder="напр. Warsaw (WAW) – Abu Dhabi (AUH)" 
+                       oninput="onAltFieldChange()"
+                       class="w-full px-3 py-2 text-xs font-semibold rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+              </div>
+            </div>
+
+            <!-- Quick Formatting Options (Buttons) -->
+            <div class="pt-2 flex flex-wrap items-center gap-2">
+              <span class="text-[11px] font-semibold text-slate-400">Стиль рядка:</span>
+              <button type="button" onclick="setAltFormatStyle('standard')" id="altFmtStd" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-300">
+                31.10.2026 - W45131 - 05:55-08:45 Route
+              </button>
+              <button type="button" onclick="setAltFormatStyle('compact')" id="altFmtCmp" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200">
+                W45131 | 31.10.2026 | 05:55-08:45 | Route
+              </button>
+              <button type="button" onclick="setAltFormatStyle('brackets')" id="altFmtBrk" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200">
+                Route, 31.10.2026 (05:55-08:45), W45131
+              </button>
+            </div>
+          </div>
+
+          <!-- Raw OCR Debug Accordion -->
+          <details class="rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700/80 p-4 text-xs">
+            <summary class="font-semibold text-slate-600 dark:text-slate-400 cursor-pointer hover:text-slate-900 dark:hover:text-slate-100 flex items-center justify-between">
+              <span>Переглянути розпізнаний текст OCR зі скріна</span>
+              <span class="text-[10px] text-slate-400">для контролю</span>
+            </summary>
+            <pre id="altOcrRawText" class="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 text-[11px] font-mono whitespace-pre-wrap break-all max-h-40 overflow-y-auto">Текст ще не завантажено</pre>
+          </details>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="py-4 border-t border-slate-200/80 dark:border-slate-800/80 bg-white/50 dark:bg-slate-900/50 text-center text-xs text-slate-600 dark:text-slate-300">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span>Tickets UA Desk • Готово до роботи</span>
+      </div>
+      <div>
+        Конфіги: <code class="font-mono text-sky-600 dark:text-sky-400">airlines.json</code> та <code class="font-mono text-sky-600 dark:text-sky-400">templates.json</code>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal: Add Airline -->
+  <div id="addAirlineModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <i data-lucide="plane-takeoff" class="w-5 h-5 text-sky-500"></i>
+          <span>Додати авіакомпанію</span>
+        </h3>
+        <button onclick="closeAddAirlineModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="addAirlineForm" onsubmit="handleAddAirline(event)" class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Назва АК</label>
+          <input type="text" id="newAirName" required placeholder="наприклад: KLM Royal Dutch Airlines" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Код IATA (2 символи)</label>
+          <input type="text" id="newAirIata" maxlength="3" required placeholder="KL" class="w-full px-3 py-2 text-xs uppercase font-mono rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Manage Booking URL</label>
+          <input type="url" id="newAirUrl" required placeholder="https://..." class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">URL логотипу (необов'язково)</label>
+          <input type="url" id="newAirLogo" placeholder="https://images.kiwi.com/airlines/64/KL.png" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+        </div>
+        
+        <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+          <button type="button" onclick="closeAddAirlineModal()" class="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
+            Скасувати
+          </button>
+          <button type="submit" class="px-4 py-2 text-xs font-bold rounded-xl bg-sky-600 hover:bg-sky-500 text-white shadow-sm">
+            Зберегти АК
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Airline -->
+  <div id="editAirlineModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <i data-lucide="pencil" class="w-5 h-5 text-sky-500"></i>
+          <span>Редагувати авіакомпанію</span>
+        </h3>
+        <button onclick="closeEditAirlineModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="editAirlineForm" onsubmit="handleSaveEditAirline(event)" class="space-y-3.5">
+        <input type="hidden" id="editAirId" />
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Назва АК</label>
+          <input type="text" id="editAirName" required class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Код IATA</label>
+          <input type="text" id="editAirIata" maxlength="3" required class="w-full px-3 py-2 text-xs uppercase font-mono rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Manage Booking URL</label>
+            <button type="button" onclick="testEditAirlineUrl('manage')" class="text-[11px] text-sky-600 dark:text-sky-400 hover:underline flex items-center gap-1">
+              <span>Тестувати</span>
+              <i data-lucide="external-link" class="w-3 h-3"></i>
+            </button>
+          </div>
+          <input type="url" id="editAirUrl" required placeholder="https://..." class="w-full px-3 py-2 text-xs font-mono rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">Check-in URL (онлайн-реєстрація)</label>
+            <button type="button" onclick="testEditAirlineUrl('checkin')" class="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1">
+              <span>Тестувати</span>
+              <i data-lucide="external-link" class="w-3 h-3"></i>
+            </button>
+          </div>
+          <input type="url" id="editAirCheckinUrl" placeholder="https://..." class="w-full px-3 py-2 text-xs font-mono rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">URL логотипу</label>
+          <input type="url" id="editAirLogo" class="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:ring-2 focus:ring-sky-500 focus:outline-none" />
+        </div>
+
+        <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
+          <button type="button" onclick="handleDeleteAirlineFromModal()" class="text-xs text-rose-500 hover:text-rose-600 font-semibold flex items-center gap-1 transition-colors">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            <span>Видалити</span>
+          </button>
+
+          <div class="flex gap-2">
+            <button type="button" onclick="closeEditAirlineModal()" class="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
+              Скасувати
+            </button>
+            <button type="submit" class="px-4 py-2 text-xs font-bold rounded-xl bg-sky-600 hover:bg-sky-500 text-white shadow-sm">
+              Зберегти зміни
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Airline Note (Нотатка оператора) -->
+  <div id="airlineNoteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl p-6">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <div class="p-2 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
+            <i data-lucide="sticky-note" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100">Нотатка для АК</h3>
+            <p id="noteAirName" class="text-xs text-slate-500 dark:text-slate-400 font-medium"></p>
+          </div>
+        </div>
+        <button onclick="closeAirlineNoteModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleSaveAirlineNote(event)" class="space-y-4">
+        <input type="hidden" id="noteAirId" />
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+            Ваша примітка / внутрішня інструкція агента:
+          </label>
+          <textarea id="noteAirText" 
+                    rows="4" 
+                    placeholder="Наприклад: Вхід PNR + пошта агента support@tickets.ua; Обов'язкова верифікація пасажира..." 
+                    class="w-full p-3 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-amber-500 focus:outline-none resize-none"></textarea>
+          <p class="text-[11px] text-slate-400 mt-1">Ця нотатка зберігається у вашому браузері та відображатиметься прямо на картці АК.</p>
+        </div>
+
+        <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
+          <button type="button" onclick="handleDeleteAirlineNote()" class="text-xs text-rose-500 hover:text-rose-600 font-semibold flex items-center gap-1">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            <span>Очистити</span>
+          </button>
+
+          <div class="flex gap-2">
+            <button type="button" onclick="closeAirlineNoteModal()" class="px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
+              Скасувати
+            </button>
+            <button type="submit" class="px-4 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white shadow-sm">
+              Зберегти нотатку
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: View Airline Note (Перегляд нотатки АК) -->
+  <div id="viewAirlineNoteModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl p-6">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2.5">
+          <div class="p-2.5 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
+            <i data-lucide="file-text" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 id="viewNoteAirName" class="text-base font-bold text-slate-900 dark:text-slate-100"></h3>
+              <span id="viewNoteAirIata" class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-700 text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300"></span>
+            </div>
+            <p class="text-xs text-amber-600 dark:text-amber-400 font-medium">📌 Нотатка / інструкція оператора</p>
+          </div>
+        </div>
+        <button onclick="closeViewAirlineNoteModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-4 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/50 mb-5 max-h-60 overflow-y-auto">
+        <p id="viewNoteText" class="text-xs text-slate-800 dark:text-slate-200 whitespace-pre-wrap leading-relaxed select-text font-sans"></p>
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
+        <button onclick="copyViewingNoteText()" class="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-medium flex items-center gap-1.5">
+          <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+          <span>Скопіювати</span>
+        </button>
+
+        <div class="flex gap-2">
+          <button onclick="closeViewAirlineNoteModal()" class="px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
+            Закрити
+          </button>
+          <button onclick="switchToEditAirlineNote()" class="flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white shadow-sm transition-colors">
+            <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+            <span>Редагувати нотатку</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    </div>
+  </div>
+
+  <!-- Modal: Developer Config / JSON Data Manager -->
+  <div id="configModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="w-full max-w-2xl bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl p-6 flex flex-col max-h-[85vh]">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <div class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20 mb-1.5">
+            <i data-lucide="shield-alert" class="w-3 h-3"></i>
+            <span>РЕЖИМ РОЗРОБНИКА</span>
+          </div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <i data-lucide="database" class="w-5 h-5 text-sky-500"></i>
+            <span>Експорт конфігурації та бекап даних</span>
+          </h3>
+          <p class="text-xs text-slate-600 dark:text-slate-300 mt-0.5">Експортуйте актуальні дані АК та шаблонів для збереження у репозиторій проєкту</p>
+        </div>
+        <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4 flex-1 overflow-y-auto pr-1">
+        <!-- Developer note -->
+        <div class="p-3.5 rounded-xl bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300">
+          <p class="font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1.5">
+            <i data-lucide="lock" class="w-3.5 h-3.5 text-sky-500"></i>
+            <span>Ізольоване середовище користувача</span>
+          </p>
+          <p>Оператори бачать лише робочий інтерфейс. Будь-які зміни (нотатки, закріплення, нові шаблони) зберігаються тільки в локальній пам'яті браузера окремого оператора і не впливають на глобальний код.</p>
+        </div>
+
+        <!-- Export Buttons -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button onclick="exportJsonFile('airlines')" class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-left hover:border-sky-500 transition-colors bg-slate-50 dark:bg-slate-900/50">
+            <div class="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+              <i data-lucide="download" class="w-4 h-4 text-sky-500"></i>
+              <span>Завантажити airlines.json</span>
+            </div>
+            <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1">Зберегти файл із усіма АК з браузера</div>
+          </button>
+
+          <button onclick="exportJsonFile('templates')" class="p-3 rounded-xl border border-slate-200 dark:border-slate-700 text-left hover:border-sky-500 transition-colors bg-slate-50 dark:bg-slate-900/50">
+            <div class="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+              <i data-lucide="download" class="w-4 h-4 text-sky-500"></i>
+              <span>Завантажити templates.json</span>
+            </div>
+            <div class="text-[11px] text-slate-600 dark:text-slate-300 mt-1">Зберегти файл із шаблонами з браузера</div>
+          </button>
+        </div>
+
+        <!-- Reset Button -->
+        <div class="pt-2">
+          <button onclick="resetToInitialDefaults()" class="text-xs text-rose-500 hover:text-rose-600 flex items-center gap-1.5 font-medium transition-colors">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Скинути локальні збережені дані до початкових файлів JSON</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="flex justify-end pt-4 mt-2 border-t border-slate-100 dark:border-slate-700">
+        <button onclick="closeConfigModal()" class="px-4 py-2 text-xs font-semibold rounded-xl bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200">
+          Закрити
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Add New Template -->
+  <div id="addTemplateModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="w-full max-w-xl bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700 mb-4">
+        <div class="flex items-center gap-2.5">
+          <div class="p-2 rounded-xl bg-sky-100 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400">
+            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100">Додати новий шаблон</h3>
+            <p class="text-xs text-slate-500">Створіть власний скрипт для партнерів або КЦ</p>
+          </div>
+        </div>
+        <button onclick="closeAddTemplateModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleSaveNewTemplate(event)" class="space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Вкладка призначення:
+            </label>
+            <select id="newTplTarget" class="w-full p-2.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500">
+              <option value="partners">ЗАПИТИ ПАРТНЕРАМ</option>
+              <option value="callcenter">ЗАПИТИ НА КЦ</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Тригер швидкого виклику (макс. 3 символи):
+            </label>
+            <div class="flex items-center">
+              <span class="px-3 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono text-xs font-bold rounded-l-xl border border-r-0 border-slate-200 dark:border-slate-700">::</span>
+              <input type="text" 
+                     id="newTplTrigger" 
+                     required 
+                     maxlength="3"
+                     placeholder="pnr" 
+                     class="w-full p-2.5 text-xs font-mono rounded-r-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 uppercase" />
+            </div>
+            <p class="text-[10px] text-slate-400 mt-0.5">Лише 1-3 символи після ::</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Категорія:
+            </label>
+            <input type="text" 
+                   id="newTplCategory" 
+                   required
+                   list="categorySuggestionsList"
+                   placeholder="наприклад: Багаж, PNR, Повернення..." 
+                   class="w-full p-2.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500" />
+            <datalist id="categorySuggestionsList">
+              <option value="PNR & Перевірка">
+              <option value="Багаж">
+              <option value="Місця & Послуги">
+              <option value="Повернення & Зміни">
+              <option value="Реєстрація & Доступ">
+              <option value="Терміново / Проблеми">
+              <option value="Фінанси / PK FIRE">
+              <option value="Комунікація">
+            </datalist>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Назва українською:
+            </label>
+            <input type="text" 
+                   id="newTplTitleUa" 
+                   required
+                   placeholder="Коротка назва скрипта" 
+                   class="w-full p-2.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500" />
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              🇺🇦 Текст українською:
+            </label>
+            <button type="button" onclick="autoTranslateAddModal()" class="text-[11px] text-sky-600 dark:text-sky-400 font-semibold hover:underline flex items-center gap-1">
+              <i data-lucide="languages" class="w-3.5 h-3.5"></i>
+              <span>Перекласти на англійську ➔</span>
+            </button>
+          </div>
+          <textarea id="newTplTextUa" 
+                    rows="3" 
+                    required
+                    placeholder="Введіть текст українською. Параметри пишіть у дужках: [PNR], [FLIGHT]" 
+                    class="w-full p-2.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 resize-none"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            🇬🇧 Текст англійською (для відправки партнеру):
+          </label>
+          <textarea id="newTplTextEn" 
+                    rows="3" 
+                    required
+                    placeholder="Dear team, please check booking [PNR]..." 
+                    class="w-full p-2.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 resize-none font-sans"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-700">
+          <button type="button" onclick="closeAddTemplateModal()" class="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
+            Скасувати
+          </button>
+          <button type="submit" class="px-5 py-2 text-xs font-bold rounded-xl bg-sky-600 hover:bg-sky-500 text-white shadow-sm">
+            Зберегти шаблон
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Existing Template -->
+  <div id="editTemplateModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="w-full max-w-xl bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700 mb-4">
+        <div class="flex items-center gap-2.5">
+          <div class="p-2 rounded-xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
+            <i data-lucide="edit-3" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-slate-100">Редагувати шаблон</h3>
+            <p class="text-xs text-slate-500">Змініть формулювання, тригер або категорію</p>
+          </div>
+        </div>
+        <button onclick="closeEditTemplateModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleSaveEditedTemplate(event)" class="space-y-4">
+        <input type="hidden" id="editTplId" />
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Вкладка призначення:
+            </label>
+            <select id="editTplTarget" class="w-full p-2.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500">
+              <option value="partners">ЗАПИТИ ПАРТНЕРАМ</option>
+              <option value="callcenter">ЗАПИТИ НА КЦ</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Тригер швидкого виклику (макс. 3 символи):
+            </label>
+            <div class="flex items-center">
+              <span class="px-3 py-2.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-mono text-xs font-bold rounded-l-xl border border-r-0 border-slate-200 dark:border-slate-700">::</span>
+              <input type="text" 
+                     id="editTplTrigger" 
+                     required 
+                     maxlength="3"
+                     class="w-full p-2.5 text-xs font-mono rounded-r-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 uppercase" />
+            </div>
+            <p class="text-[10px] text-slate-400 mt-0.5">Лише 1-3 символи після ::</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Категорія:
+            </label>
+            <input type="text" 
+                   id="editTplCategory" 
+                   required
+                   list="categorySuggestionsList"
+                   class="w-full p-2.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Назва українською:
+            </label>
+            <input type="text" 
+                   id="editTplTitleUa" 
+                   required
+                   class="w-full p-2.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500" />
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+              🇺🇦 Текст українською:
+            </label>
+            <button type="button" onclick="autoTranslateEditModal()" class="text-[11px] text-sky-600 dark:text-sky-400 font-semibold hover:underline flex items-center gap-1">
+              <i data-lucide="languages" class="w-3.5 h-3.5"></i>
+              <span>Перекласти на англійську ➔</span>
+            </button>
+          </div>
+          <textarea id="editTplTextUa" 
+                    rows="3" 
+                    required
+                    class="w-full p-2.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 resize-none"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            🇬🇧 Текст англійською (для відправки партнеру):
+          </label>
+          <textarea id="editTplTextEn" 
+                    rows="3" 
+                    required
+                    class="w-full p-2.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-sky-500 resize-none font-sans"></textarea>
+        </div>
+
+        <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
+          <button type="button" onclick="handleDeleteTemplateFromModal()" class="text-xs text-rose-500 hover:text-rose-600 font-semibold flex items-center gap-1">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            <span>Видалити шаблон</span>
+          </button>
+
+          <div class="flex gap-2">
+            <button type="button" onclick="closeEditTemplateModal()" class="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
+              Скасувати
+            </button>
+            <button type="submit" class="px-5 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white shadow-sm">
+              Зберегти зміни
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Helpers Logic -->
+  <script>
+    function openAddAirlineModal() {
+      document.getElementById('addAirlineModal').classList.remove('hidden');
+      document.getElementById('newAirName').focus();
+    }
+    function closeAddAirlineModal() {
+      document.getElementById('addAirlineModal').classList.add('hidden');
+      document.getElementById('addAirlineForm').reset();
+    }
+    function handleAddAirline(e) {
+      e.preventDefault();
+      const name = document.getElementById('newAirName').value.trim();
+      const iata = document.getElementById('newAirIata').value.trim().toUpperCase();
+      const url = document.getElementById('newAirUrl').value.trim();
+      let logo = document.getElementById('newAirLogo').value.trim();
+      if (!logo) {
+        logo = `https://images.kiwi.com/airlines/64/${iata}.png`;
+      }
+
+      const newAirline = {
+        id: 'air_' + Date.now(),
+        name: name,
+        iata: iata,
+        logoUrl: logo,
+        manageBookingUrl: url
+      };
+
+      state.airlines.unshift(newAirline);
+      localStorage.setItem('tickets_ua_custom_airlines', JSON.stringify(state.airlines));
+      
+      updateHeaderCounters();
+      renderAirlineGrid();
+      closeAddAirlineModal();
+      showToast(`Авіакомпанію ${name} успішно додано!`);
+    }
+
+    let devClickCount = 0;
+    let devClickTimer = null;
+
+    function triggerDevAuth() {
+      const pin = prompt('🔒 Введіть PIN-код розробника:');
+      if (pin === '2026' || pin === 'dev' || pin === 'admin') {
+        document.getElementById('configModal').classList.remove('hidden');
+        if (typeof showToast === 'function') {
+          showToast('Режим розробника активовано');
+        }
+      } else if (pin !== null) {
+        alert('Невірний PIN-код розробника!');
+      }
+    }
+
+    function openConfigModal() {
+      triggerDevAuth();
+    }
+
+    function closeConfigModal() {
+      document.getElementById('configModal').classList.add('hidden');
+    }
+
+    // Secret developer shortcut: Ctrl + Shift + D
+    document.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd' || e.key === 'В' || e.key === 'в')) {
+        e.preventDefault();
+        triggerDevAuth();
+      }
+    });
+
+    // Secret developer click on brand logo (5 quick clicks)
+    document.addEventListener('DOMContentLoaded', () => {
+      const logoTrigger = document.getElementById('brandLogoDevTrigger');
+      if (logoTrigger) {
+        logoTrigger.addEventListener('click', () => {
+          devClickCount++;
+          clearTimeout(devClickTimer);
+          devClickTimer = setTimeout(() => { devClickCount = 0; }, 1500);
+          if (devClickCount >= 5) {
+            devClickCount = 0;
+            triggerDevAuth();
+          }
+        });
+      }
+    });
+
+    function exportJsonFile(type) {
+      const data = type === 'airlines' ? state.airlines : state.templates;
+      const str = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", str);
+      downloadAnchor.setAttribute("download", `${type}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast(`Файл ${type}.json експортовано!`);
+    }
+
+    function resetToInitialDefaults() {
+      if (confirm('Ви впевнені, що хочете скинути локальні зміни до стандартних файлів?')) {
+        localStorage.removeItem('tickets_ua_custom_airlines');
+        localStorage.removeItem('tickets_ua_custom_templates');
+        localStorage.removeItem('tickets_ua_recent_templates');
+        window.location.reload();
+      }
+    }
+  </script>
+
+  <!-- Core App JS -->
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,578 @@
+﻿[
+    {
+        "id":  "ryanair",
+        "name":  "Ryanair",
+        "iata":  "FR",
+        "country":  "Ireland",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/FR.png",
+        "manageBookingUrl":  "https://www.ryanair.com/gb/en/trip/manage",
+        "checkinUrl":  "https://www.ryanair.com/gb/en/check-in"
+    },
+    {
+        "id":  "wizzair",
+        "name":  "Wizz Air",
+        "iata":  "W6",
+        "country":  "Hungary",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/W6.png",
+        "manageBookingUrl":  "https://wizzair.com/en-gb/information-and-services/booking-information/check-in-and-boarding",
+        "checkinUrl":  "https://wizzair.com/en-gb/information-and-services/booking-information/check-in-and-boarding"
+    },
+    {
+        "id":  "lot",
+        "name":  "LOT Polish Airlines",
+        "iata":  "LO",
+        "country":  "Poland",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/LO.png",
+        "manageBookingUrl":  "https://www.lot.com/pl/en/manage-reservation",
+        "checkinUrl":  "https://www.lot.com/pl/en/check-in"
+    },
+    {
+        "id":  "turkish",
+        "name":  "Turkish Airlines",
+        "iata":  "TK",
+        "country":  "Turkey",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/TK.png",
+        "manageBookingUrl":  "https://www.turkishairlines.com/en-int/flights/manage-booking/",
+        "checkinUrl":  "https://www.turkishairlines.com/en-int/flights/check-in/"
+    },
+    {
+        "id":  "lufthansa",
+        "name":  "Lufthansa",
+        "iata":  "LH",
+        "country":  "Germany",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/LH.png",
+        "manageBookingUrl":  "https://www.lufthansa.com/de/en/manage-booking",
+        "checkinUrl":  "https://www.lufthansa.com/de/en/online-check-in"
+    },
+    {
+        "id":  "easyjet",
+        "name":  "easyJet",
+        "iata":  "U2",
+        "country":  "United Kingdom",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/U2.png",
+        "manageBookingUrl":  "https://www.easyjet.com/en/manage-booking",
+        "checkinUrl":  "https://www.easyjet.com/en/check-in-online"
+    },
+    {
+        "id":  "pegasus",
+        "name":  "Pegasus Airlines",
+        "iata":  "PC",
+        "country":  "Turkey",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/PC.png",
+        "manageBookingUrl":  "https://www.flypgs.com/en/manage-my-booking",
+        "checkinUrl":  "https://www.flypgs.com/en/check-in"
+    },
+    {
+        "id":  "airfrance",
+        "name":  "Air France",
+        "iata":  "AF",
+        "country":  "France",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/AF.png",
+        "manageBookingUrl":  "https://www.airfrance.com/manage-booking",
+        "checkinUrl":  "https://www.airfrance.com/check-in"
+    },
+    {
+        "id":  "klm",
+        "name":  "KLM Royal Dutch Airlines",
+        "iata":  "KL",
+        "country":  "Netherlands",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/KL.png",
+        "manageBookingUrl":  "https://www.klm.com/trip",
+        "checkinUrl":  "https://www.klm.com/check-in"
+    },
+    {
+        "id":  "austrian",
+        "name":  "Austrian Airlines",
+        "iata":  "OS",
+        "country":  "Austria",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/OS.png",
+        "manageBookingUrl":  "https://www.austrian.com/at/en/manage-booking",
+        "checkinUrl":  "https://www.austrian.com/at/en/online-check-in"
+    },
+    {
+        "id":  "swiss",
+        "name":  "SWISS",
+        "iata":  "LX",
+        "country":  "Switzerland",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/LX.png",
+        "manageBookingUrl":  "https://www.swiss.com/ch/en/manage-booking",
+        "checkinUrl":  "https://www.swiss.com/ch/en/fly/check-in/online-check-in"
+    },
+    {
+        "id":  "emirates",
+        "name":  "Emirates",
+        "iata":  "EK",
+        "country":  "UAE",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/EK.png",
+        "manageBookingUrl":  "https://www.emirates.com/english/manage-booking/",
+        "checkinUrl":  "https://www.emirates.com/english/manage-booking/online-check-in/"
+    },
+    {
+        "id":  "qatar",
+        "name":  "Qatar Airways",
+        "iata":  "QR",
+        "country":  "Qatar",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/QR.png",
+        "manageBookingUrl":  "https://www.qatarairways.com/en/manage-booking.html",
+        "checkinUrl":  "https://www.qatarairways.com/en/services-checking/check-in.html"
+    },
+    {
+        "id":  "iberia",
+        "name":  "Iberia",
+        "iata":  "IB",
+        "country":  "Spain",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/IB.png",
+        "manageBookingUrl":  "https://www.iberia.com/es/your-flights/",
+        "checkinUrl":  "https://www.iberia.com/es/autocheckin-online/"
+    },
+    {
+        "id":  "american",
+        "name":  "American Airlines",
+        "iata":  "AA",
+        "country":  "USA",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/AA.png",
+        "manageBookingUrl":  "https://www.aa.com/reservation/findReservationAccess.do",
+        "checkinUrl":  "https://www.aa.com/reservation/flightCheckInViewReservationsAccess.do"
+    },
+    {
+        "id":  "eurowings",
+        "name":  "Eurowings",
+        "iata":  "EW",
+        "country":  "Germany",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/EW.png",
+        "manageBookingUrl":  "https://www.eurowings.com/en/my-trip.html",
+        "checkinUrl":  "https://www.eurowings.com/en/information/check-in/web-check-in.html"
+    },
+    {
+        "id":  "aerolineas-argentinas",
+        "name":  "Aerolíneas Argentinas",
+        "iata":  "AR",
+        "country":  "Argentina",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/AR.png",
+        "manageBookingUrl":  "https://www.aerolineas.com.ar/en-us/booking-management",
+        "checkinUrl":  "https://www.aerolineas.com.ar/en-us/checkin"
+    },
+    {
+        "id":  "sas",
+        "name":  "SAS Scandinavian Airlines",
+        "iata":  "SK",
+        "country":  "Sweden",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/SK.png",
+        "manageBookingUrl":  "https://www.flysas.com/en/book/my-bookings/",
+        "checkinUrl":  "https://www.flysas.com/en/checkin/"
+    },
+    {
+        "id":  "latam",
+        "name":  "LATAM Airlines",
+        "iata":  "LA",
+        "country":  "Chile",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/LA.png",
+        "manageBookingUrl":  "https://www.latamairlines.com/us/en/my-trips",
+        "checkinUrl":  "https://www.latamairlines.com/us/en/check-in"
+    },
+    {
+        "id":  "flyone",
+        "name":  "FlyOne",
+        "iata":  "5F",
+        "country":  "Moldova",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/5F.png",
+        "manageBookingUrl":  "https://flyone.eu/en/Manage-booking",
+        "checkinUrl":  "https://flyone.eu/en/Check-In"
+    },
+    {
+        "id":  "fastjet",
+        "name":  "fastjet",
+        "iata":  "FN",
+        "country":  "Zimbabwe",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/FN.png",
+        "manageBookingUrl":  "https://www.fastjet.com/manage-booking",
+        "checkinUrl":  "https://www.fastjet.com/online-checkin"
+    },
+    {
+        "id":  "transavia-france",
+        "name":  "Transavia France",
+        "iata":  "TO",
+        "country":  "France",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/TO.png",
+        "manageBookingUrl":  "https://www.transavia.com/en-EU/my-transavia/",
+        "checkinUrl":  "https://www.transavia.com/en-EU/my-transavia/check-in/"
+    },
+    {
+        "id":  "westjet",
+        "name":  "WestJet",
+        "iata":  "WS",
+        "country":  "Canada",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/WS.png",
+        "manageBookingUrl":  "https://www.westjet.com/en-ca/manage",
+        "checkinUrl":  "https://www.westjet.com/en-ca/manage/check-in"
+    },
+    {
+        "id":  "volotea",
+        "name":  "Volotea",
+        "iata":  "V7",
+        "country":  "Spain",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/V7.png",
+        "manageBookingUrl":  "https://www.volotea.com/en/your-booking/",
+        "checkinUrl":  "https://www.volotea.com/en/check-in-online/"
+    },
+    {
+        "id":  "finnair",
+        "name":  "Finnair",
+        "iata":  "AY",
+        "country":  "Finland",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/AY.png",
+        "manageBookingUrl":  "https://www.finnair.com/en/manage-booking",
+        "checkinUrl":  "https://www.finnair.com/en/check-in"
+    },
+    {
+        "id":  "airbaltic",
+        "name":  "airBaltic",
+        "iata":  "BT",
+        "country":  "Latvia",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/BT.png",
+        "manageBookingUrl":  "https://www.airbaltic.com/en/manage-my-booking",
+        "checkinUrl":  "https://www.airbaltic.com/en/check-in-online"
+    },
+    {
+        "id":  "vietjet",
+        "name":  "VietJet Air",
+        "iata":  "VJ",
+        "country":  "Vietnam",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/VJ.png",
+        "manageBookingUrl":  "https://www.vietjetair.com/en/my-booking",
+        "checkinUrl":  "https://www.vietjetair.com/en/checkin"
+    },
+    {
+        "id":  "delta",
+        "name":  "Delta Air Lines",
+        "iata":  "DL",
+        "country":  "USA",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/DL.png",
+        "manageBookingUrl":  "https://www.delta.com/mytrips/",
+        "checkinUrl":  "https://www.delta.com/flight-checkin/"
+    },
+    {
+        "id":  "alaska",
+        "name":  "Alaska Airlines",
+        "iata":  "AS",
+        "country":  "USA",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/AS.png",
+        "manageBookingUrl":  "https://www.alaskaair.com/booking/reservation-lookup",
+        "checkinUrl":  "https://www.alaskaair.com/booking/checkin"
+    },
+    {
+        "id":  "hisky",
+        "name":  "HiSky",
+        "iata":  "H7",
+        "country":  "Moldova",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/H7.png",
+        "manageBookingUrl":  "https://hisky.aero/en/manage-booking",
+        "checkinUrl":  "https://hisky.aero/en/check-in"
+    },
+    {
+        "id":  "tap-portugal",
+        "name":  "TAP Air Portugal",
+        "iata":  "TP",
+        "country":  "Portugal",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/TP.png",
+        "manageBookingUrl":  "https://www.flytap.com/en-pt/manage-booking",
+        "checkinUrl":  "https://www.flytap.com/en-pt/check-in-online"
+    },
+    {
+        "id":  "vueling",
+        "name":  "Vueling",
+        "checkinUrl":  "https://www.vueling.com/en/your-bookings/online-check-in",
+        "manageBookingUrl":  "https://www.vueling.com/en/your-bookings/manage-your-booking",
+        "iata":  "VY",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/VY.png",
+        "country":  "Spain"
+    },
+    {
+        "id":  "korean-air",
+        "name":  "Korean Air",
+        "checkinUrl":  "https://www.koreanair.com/booking-flow/check-in",
+        "manageBookingUrl":  "https://www.koreanair.com/booking-flow/booking-search",
+        "iata":  "KE",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/KE.png",
+        "country":  "South Korea"
+    },
+    {
+        "id":  "jetsmart",
+        "name":  "JetSMART",
+        "checkinUrl":  "https://jetsmart.com/cl/es/check-in",
+        "manageBookingUrl":  "https://jetsmart.com/cl/es/manage-booking",
+        "iata":  "JA",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/JA.png",
+        "country":  "Chile"
+    },
+    {
+        "id":  "avianca",
+        "name":  "Avianca",
+        "checkinUrl":  "https://www.avianca.com/en/your-booking/check-in/",
+        "manageBookingUrl":  "https://www.avianca.com/en/your-booking/",
+        "iata":  "AV",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/AV.png",
+        "country":  "Colombia"
+    },
+    {
+        "id":  "etihad",
+        "name":  "Etihad Airways",
+        "checkinUrl":  "https://www.etihad.com/en/manage/check-in",
+        "manageBookingUrl":  "https://www.etihad.com/en/manage",
+        "iata":  "EY",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/EY.png",
+        "country":  "UAE"
+    },
+    {
+        "id":  "thai-airasia",
+        "name":  "Thai AirAsia",
+        "checkinUrl":  "https://www.airasia.com/check-in/en/gb",
+        "manageBookingUrl":  "https://www.airasia.com/member/purchases",
+        "iata":  "FD",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/FD.png",
+        "country":  "Thailand"
+    },
+    {
+        "id":  "aeromexico",
+        "name":  "Aeroméxico",
+        "checkinUrl":  "https://aeromexico.com/en-us/check-in",
+        "manageBookingUrl":  "https://aeromexico.com/en-us/my-trips",
+        "iata":  "AM",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/AM.png",
+        "country":  "Mexico"
+    },
+    {
+        "id":  "azal",
+        "name":  "Azerbaijan Airlines (AZAL)",
+        "checkinUrl":  "https://azal.az/en/online-check-in/",
+        "manageBookingUrl":  "https://azal.az/en/manage-booking/",
+        "iata":  "J2",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/J2.png",
+        "country":  "Azerbaijan"
+    },
+    {
+        "id":  "chair-airlines",
+        "name":  "Chair Airlines",
+        "checkinUrl":  "https://www.chair.ch/en/check-in",
+        "manageBookingUrl":  "https://www.chair.ch/en/manage-booking",
+        "iata":  "CS",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/CS.png",
+        "country":  "Switzerland"
+    },
+    {
+        "id":  "china-southern",
+        "name":  "China Southern Airlines",
+        "checkinUrl":  "https://extra.csair.com/content/checkin/",
+        "manageBookingUrl":  "https://www.csair.com/en/",
+        "iata":  "CZ",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/CZ.png",
+        "country":  "China"
+    },
+    {
+        "id":  "air-cairo",
+        "name":  "Air Cairo",
+        "checkinUrl":  "https://aircairo.com/en-gl/online-check-in",
+        "manageBookingUrl":  "https://aircairo.com/en-gl/manage-booking",
+        "iata":  "SM",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/SM.png",
+        "country":  "Egypt"
+    },
+    {
+        "id":  "mexicana",
+        "name":  "Mexicana de Aviación",
+        "checkinUrl":  "https://www.mexicana.gob.mx/",
+        "manageBookingUrl":  "https://www.mexicana.gob.mx/",
+        "iata":  "XN",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/XN.png",
+        "country":  "Mexico"
+    },
+    {
+        "id":  "thai-vietjet",
+        "name":  "Thai Vietjet Air",
+        "checkinUrl":  "https://th.vietjetair.com/checkin",
+        "manageBookingUrl":  "https://th.vietjetair.com/",
+        "iata":  "VZ",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/VZ.png",
+        "country":  "Thailand"
+    },
+    {
+        "id":  "saudia",
+        "name":  "Saudia",
+        "checkinUrl":  "https://www.saudia.com/online-checkin",
+        "manageBookingUrl":  "https://www.saudia.com/manage-booking",
+        "iata":  "SV",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/SV.png",
+        "country":  "Saudi Arabia"
+    },
+    {
+        "id":  "ajet",
+        "name":  "AJet",
+        "checkinUrl":  "https://ajet.com/en/check-in",
+        "manageBookingUrl":  "https://ajet.com/en/manage-booking",
+        "iata":  "VF",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/VF.png",
+        "country":  "Turkey"
+    },
+    {
+        "id":  "sky-express",
+        "name":  "SKY express",
+        "checkinUrl":  "https://www.skyexpress.gr/en/check-in",
+        "manageBookingUrl":  "https://www.skyexpress.gr/en/manage-my-booking",
+        "iata":  "GQ",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/GQ.png",
+        "country":  "Greece"
+    },
+    {
+        "id":  "spicejet",
+        "name":  "SpiceJet",
+        "checkinUrl":  "https://www.spicejet.com/check-in",
+        "manageBookingUrl":  "https://www.spicejet.com/manage-booking",
+        "iata":  "SG",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/SG.png",
+        "country":  "India"
+    },
+    {
+        "id":  "aer-lingus",
+        "name":  "Aer Lingus",
+        "checkinUrl":  "https://www.aerlingus.com/manage-trip/check-in-online/",
+        "manageBookingUrl":  "https://www.aerlingus.com/manage-trip/manage-booking/",
+        "iata":  "EI",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/EI.png",
+        "country":  "Ireland"
+    },
+    {
+        "id":  "azul",
+        "name":  "Azul Brazilian Airlines",
+        "checkinUrl":  "https://www.voeazul.com.br/en/check-in",
+        "manageBookingUrl":  "https://www.voeazul.com.br/en/manage-booking",
+        "iata":  "AD",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/AD.png",
+        "country":  "Brazil"
+    },
+    {
+        "id":  "norwegian",
+        "name":  "Norwegian",
+        "checkinUrl":  "https://www.norwegian.com/en/travel-info/check-in-and-boarding/online-check-in/",
+        "manageBookingUrl":  "https://www.norwegian.com/en/my-travels/#/lookup",
+        "iata":  "DY",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/DY.png",
+        "country":  "Norway"
+    },
+    {
+        "id":  "croatia-airlines",
+        "name":  "Croatia Airlines",
+        "checkinUrl":  "https://www.croatiaairlines.com/en/check-in",
+        "manageBookingUrl":  "https://www.croatiaairlines.com/en/my-booking",
+        "iata":  "OU",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/OU.png",
+        "country":  "Croatia"
+    },
+    {
+        "id":  "air-serbia",
+        "name":  "Air Serbia",
+        "checkinUrl":  "https://www.airserbia.com/en/web-check-in",
+        "manageBookingUrl":  "https://www.airserbia.com/en/my-booking",
+        "iata":  "JU",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/JU.png",
+        "country":  "Serbia"
+    },
+    {
+        "id":  "jetstar",
+        "name":  "Jetstar Airways",
+        "checkinUrl":  "https://www.jetstar.com/au/en/check-in",
+        "manageBookingUrl":  "https://www.jetstar.com/au/en/manage-booking/",
+        "iata":  "JQ",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/JQ.png",
+        "country":  "Australia"
+    },
+    {
+        "id":  "flyadeal",
+        "name":  "flyadeal",
+        "checkinUrl":  "https://www.flyadeal.com/en/check-in",
+        "manageBookingUrl":  "https://www.flyadeal.com/en/manage-booking",
+        "iata":  "F3",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/F3.png",
+        "country":  "Saudi Arabia"
+    },
+    {
+        "id":  "bangkok-airways",
+        "name":  "Bangkok Airways",
+        "checkinUrl":  "https://www.bangkokair.com/online-check-in",
+        "manageBookingUrl":  "https://www.bangkokair.com/manage-my-booking",
+        "iata":  "PG",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/PG.png",
+        "country":  "Thailand"
+    },
+    {
+        "id":  "gol",
+        "name":  "GOL Linhas Aéreas",
+        "checkinUrl":  "https://www.voegol.com.br/en-us/check-in",
+        "manageBookingUrl":  "https://www.voegol.com.br/en-us/my-bookings",
+        "iata":  "G3",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/G3.png",
+        "country":  "Brazil"
+    },
+    {
+        "id":  "jetblue",
+        "name":  "JetBlue Airways",
+        "checkinUrl":  "https://www.jetblue.com/check-in",
+        "manageBookingUrl":  "https://www.jetblue.com/manage-trips",
+        "iata":  "B6",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/B6.png",
+        "country":  "USA"
+    },
+    {
+        "id":  "volaris",
+        "name":  "Volaris",
+        "checkinUrl":  "https://www.volaris.com/check-in",
+        "manageBookingUrl":  "https://www.volaris.com/my-trips",
+        "iata":  "Y4",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/Y4.png",
+        "country":  "Mexico"
+    },
+    {
+        "id":  "thai-lion",
+        "name":  "Thai Lion Air",
+        "checkinUrl":  "https://www.lionairthai.com/en/Check-in",
+        "manageBookingUrl":  "https://www.lionairthai.com/en/Manage-Booking",
+        "iata":  "SL",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/SL.png",
+        "country":  "Thailand"
+    },
+    {
+        "id":  "united",
+        "name":  "United Airlines",
+        "checkinUrl":  "https://www.united.com/en/us/checkin",
+        "manageBookingUrl":  "https://www.united.com/en/us/manageres/mytrips",
+        "iata":  "UA",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/UA.png",
+        "country":  "USA"
+    },
+    {
+        "id":  "aegean",
+        "name":  "Aegean Airlines",
+        "checkinUrl":  "https://en.aegeanair.com/checkin/",
+        "manageBookingUrl":  "https://en.aegeanair.com/my-booking/",
+        "iata":  "A3",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/A3.png",
+        "country":  "Greece"
+    },
+    {
+        "id":  "porter",
+        "name":  "Porter Airlines",
+        "checkinUrl":  "https://www.flyporter.com/en-ca/manage-flights/web-check-in",
+        "manageBookingUrl":  "https://www.flyporter.com/en-ca/manage-flights/my-bookings",
+        "iata":  "PD",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/PD.png",
+        "country":  "Canada"
+    },
+    {
+        "id":  "air-europa",
+        "name":  "Air Europa",
+        "checkinUrl":  "https://www.aireuropa.com/en/check-in",
+        "manageBookingUrl":  "https://www.aireuropa.com/en/manage-booking",
+        "iata":  "UX",
+        "logoUrl":  "https://images.kiwi.com/airlines/64/UX.png",
+        "country":  "Spain"
+    }
+]
