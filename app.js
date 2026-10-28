@@ -3307,16 +3307,31 @@ function shiftDateDays(dmyStr, days) {
 }
 
 const ALT_MONTH_MAP = {
+  // English
   'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06',
   'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12',
+  // Ukrainian
   'січ': '01', 'лют': '02', 'бер': '03', 'кві': '04', 'тра': '05', 'чер': '06',
   'лип': '07', 'сер': '08', 'вер': '09', 'жов': '10', 'лис': '11', 'гру': '12',
+  // Russian
   'янв': '01', 'фев': '02', 'мар': '03', 'апр': '04', 'май': '05', 'июн': '06',
   'июл': '07', 'авг': '08', 'сен': '09', 'окт': '10', 'ноя': '11', 'дек': '12',
-  'ott': '10', 'okt': '10', 'dic': '12', 'dez': '12'
+  // German
+  'mär': '03', 'mai': '05', 'okt': '10', 'dez': '12',
+  // French
+  'fév': '02', 'avr': '04', 'jui': '07', 'aoû': '08', 'déc': '12',
+  // Spanish / Italian / Portuguese
+  'ene': '01', 'gen': '01', 'abr': '04', 'mag': '05', 'giu': '06', 'lug': '07',
+  'ago': '08', 'set': '09', 'ott': '10', 'dic': '12',
+  // Polish
+  'sty': '01', 'lut': '02', 'kwi': '04', 'maj': '05', 'cze': '06',
+  'sie': '08', 'wrz': '09', 'paź': '10',
+  // Turkish
+  'oca': '01', 'şub': '02', 'nis': '04', 'haz': '06', 'tem': '07',
+  'ağu': '08', 'eyl': '09', 'eki': '10', 'kas': '11', 'ara': '12'
 };
 
-// Universal Date Normalizer (supports DD.MM.YYYY, YYYY-MM-DD, Dec 21, 21 Dec, MM-DD, 12-21, etc.)
+// Universal Date Normalizer (supports European, English, Chinese Dida/PKFARE, GDS, ISO formats)
 function normalizeDate(raw) {
   if (!raw) return '';
   raw = String(raw).trim();
@@ -3324,19 +3339,37 @@ function normalizeDate(raw) {
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
 
-  // 1. DD.MM.YYYY or DD/MM/YYYY or DD-MM-YYYY
+  // 1. Chinese Consolidator Format (Dida, PKFARE): 2026年12月21日 or 12月21日
+  const cnMatch = raw.match(/(?:(\d{4})年)?(\d{1,2})月(\d{1,2})日/);
+  if (cnMatch) {
+    const yr = cnMatch[1] || currentYear;
+    return `${cnMatch[3].padStart(2, '0')}.${cnMatch[2].padStart(2, '0')}.${yr}`;
+  }
+
+  // 2. GDS Sabre/Amadeus Format: e.g. 21DEC, 21DEC26, 21DEC2026
+  const gdsMatch = raw.match(/\b(\d{1,2})(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(\d{2,4})?\b/i);
+  if (gdsMatch) {
+    const day = gdsMatch[1].padStart(2, '0');
+    const mon = ALT_MONTH_MAP[gdsMatch[2].toLowerCase()];
+    let yr = gdsMatch[3];
+    if (yr && yr.length === 2) yr = `20${yr}`;
+    if (!yr) yr = currentYear;
+    return `${day}.${mon}.${yr}`;
+  }
+
+  // 3. DD.MM.YYYY or DD/MM/YYYY or DD-MM-YYYY
   const d4 = raw.match(/\b(\d{1,2})[\.\/\-](\d{1,2})[\.\/\-](\d{4})\b/);
   if (d4) {
     return `${d4[1].padStart(2, '0')}.${d4[2].padStart(2, '0')}.${d4[3]}`;
   }
 
-  // 2. YYYY-MM-DD or YYYY.MM.DD or YYYY/MM/DD
+  // 4. YYYY-MM-DD or YYYY.MM.DD or YYYY/MM/DD (Dida / PKFARE API default)
   const iso = raw.match(/\b(\d{4})[\.\/\-](\d{1,2})[\.\/\-](\d{1,2})\b/);
   if (iso) {
     return `${iso[3].padStart(2, '0')}.${iso[2].padStart(2, '0')}.${iso[1]}`;
   }
 
-  // 3. Month First: e.g. "Dec 21, 2026", "December 21, 2026", "Mon, Dec 21 2026", "Dec 21 19:45"
+  // 5. Month First: e.g. "Dec 21, 2026", "December 21, 2026", "Mon, Dec 21 2026", "Dec 21 19:45"
   const mFirst = raw.match(/(?:[A-Za-zА-Яа-яіІєЄїЇ]{2,3},?\s+)?([A-Za-zА-Яа-яіІєЄїЇ]{3,9})\s+(\d{1,2})(?:[,\s]+(\d{4}))?/i);
   if (mFirst) {
     const monStr = mFirst[1].toLowerCase().slice(0, 3);
@@ -3347,7 +3380,7 @@ function normalizeDate(raw) {
     }
   }
 
-  // 4. Day First: e.g. "21 Dec 2026", "21 December 2026", "Sat, 31 Oct 2026", "21 Dec"
+  // 6. Day First: e.g. "21 Dec 2026", "21 December 2026", "Sat, 31 Oct 2026", "21 Dec"
   const dFirst = raw.match(/(?:[A-Za-zА-Яа-яіІєЄїЇ]{2,3},?\s+)?(\d{1,2})\s+([A-Za-zА-Яа-яіІєЄїЇ]{3,9})(?:[,\s]+(\d{4}))?/i);
   if (dFirst) {
     const day = dFirst[1].padStart(2, '0');
@@ -3358,7 +3391,7 @@ function normalizeDate(raw) {
     }
   }
 
-  // 5. Short dates: MM-DD or DD-MM without year (e.g. "12-21", "12-22", "21/12", "12/21")
+  // 7. Short dates: MM-DD or DD-MM without year (e.g. "12-21", "12-22", "21/12", "12/21")
   const d2 = raw.match(/\b(\d{1,2})[\.\/\-](\d{1,2})\b/);
   if (d2) {
     const n1 = parseInt(d2[1], 10);
@@ -3378,46 +3411,66 @@ function normalizeDate(raw) {
   return '';
 }
 
-// Gemini 2.5 Flash Vision API integration for 100% parsing accuracy
+// Gemini 2.5 Flash Vision API integration for 100% parsing accuracy across all Airlines & Consolidators (PKFARE, Dida, GDS)
 async function parseWithGeminiVision(fileOrBlob, apiKey) {
   const base64Data = await blobToBase64(fileOrBlob);
   const mimeType = fileOrBlob.type || 'image/jpeg';
 
-  const systemPrompt = `Ти експерт авіакаси та систем бронювання (GDS, OTA, Wizz Air, Ryanair, LOT тощо).
-Твоє головне завдання — повністю розібрати рейс зі скріншота.
+  const systemPrompt = `Ти головний експерт систем бронювання авіаквитків, міжнародних консолідаторів та авіакомпаній (DidaTravel / Dida, PKFARE, Mystifly, Travelfusion, Amadeus, Sabre, Galileo, Wizz Air, Ryanair, Turkish Airlines, Air Tanzania, LOT, Emirates тощо).
 
-ОБОВ'ЯЗКОВІ ВИМОГИ:
-1. ДАТА ВИЛЬОТУ — КРИТИЧНО ВАЖЛИВО!
-На скріншоті ЗАВЖДИ є дата перельоту (наприклад "Dec 21, 2026", "21 Dec 2026", "Dec 21", "Mon, Dec 21", "12-21", "21.12.2026", "Dec 21 19:45").
-УВАЖНО подивись на весь скріншот: дрібний шрифт під містами (наприклад під Valencia Airport), біля часу вильоту, в шапці або внизу.
-Ти ЗОБОВ'ЯЗАНИЙ знайти дату і повернути її у форматі DD.MM.YYYY (наприклад "21.12.2026").
-Якщо рік відсутній — підстав 2026.
-ПОЛЕ date НЕ ПОВИННО БУТИ ПУСТИМ!
+Твоє завдання — зі 100% точністю розібрати будь-який скріншот (кабінет консолідатора Dida/PKFARE, GDS-термінал, сайт АК, мобільний додаток, таблиця бронювання) і витягти ідеальний рядок альтернативи.
 
-2. НОМЕР РЕЙСУ:
-Код авіакомпанії + номер рейсу разом без пробілів (наприклад W62386, TC203, FR1234, LO149).
+КРИТИЧНО ВАЖЛИВІ ПРАВИЛА:
 
-3. МАРШРУТ (IATA):
-Код вильоту та прильоту через дефіс (наприклад VLC-BUD, NBO-DAR).
+1. ДАТА ВИЛЬОТУ (date) — ОБОВ'ЯЗКОВО СУВОРО У ФОРМАТІ DD.MM.YYYY:
+Дата ЗАВЖДИ є на скріншоті! Знайди її в будь-якому форматі:
+- Англійський / міжнародний: "Dec 21, 2026", "21 Dec", "December 21", "Mon, Dec 21", "21-Dec-2026"
+- Консолідатори Dida / PKFARE (китайський/азійський): "2026/12/21", "2026-12-21", "12-21", "2026年12月21日", "12月21日"
+- GDS формат: "21DEC", "21DEC26", "21DEC2026"
+- Європейський / цифровий: "21.12.2026", "21/12/2026", "21-12-2026"
+- Дрібний шрифт під містами або біля часу (наприклад "Dec 21, 2026 19:45 Mon").
+ЗАВЖДИ перетвори дату у стандарт: DD.MM.YYYY (наприклад "21.12.2026"). Якщо рік не вказано — підстав 2026.
+ПОЛЕ date НЕ МОЖЕ БУТИ ПУСТИМ!
 
-4. ЧАС ВИЛЬОТУ ТА ПРИЛЬОТУ:
-HH:MM-HH:MM (наприклад 19:45-22:40). Якщо приліт наступного дня — додай (+1).
+2. НОМЕР РЕЙСУ (flight):
+- 2-значний код IATA (або 3-значний ICAO) + 1-4 цифри без пробілів: W62386, TC203, TC136, LO149, FR1234, CZ301, MU587, TK1821.
+- Уважно шукай у стовпчиках "Flight", "航班", "Flight No", "Рейс", або біля логотипу авіакомпанії.
 
-5. СТИКОВКИ:
-Якщо рейс з пересадкою — додай кожен сегмент окремо у масив segments.
+3. МАРШРУТ (route):
+- 3-літерні IATA коди аеропортів вильоту та прильоту через дефіс: VLC-BUD, NBO-DAR, DAR-ZNZ, PEK-DXB, WAW-LHR.
+- Якщо вказані міста китайською (наприклад 北京 - 迪拜) або англійською (Valencia - Budapest), перетвори у відповідні IATA аеропортів (VLC-BUD, PEK-DXB).
 
-Поверни ВИКЛЮЧНО валідний JSON без markdown форматування за зразком:
+4. ЧАС ВИЛЬОТУ ТА ПРИЛЬОТУ (time):
+- Формат: HH:MM-HH:MM (наприклад "23:40-01:10", "19:45-22:40").
+- Якщо приліт на наступний день (є позначка +1, +1d, +1天, 次日, або час прильоту менший за час вильоту), ОБОВ'ЯЗКОВО додай (+1): наприклад "23:40-01:10 (+1)".
+
+5. ПЕРЕСАДКИ ТА СТИКОВКИ (Transfer / Layover / 中转 / 经停):
+- Якщо рейс має пересадку (2 або більше перельотів), кожен сегмент ПОВИНЕН бути окремим об'єктом у масиві segments!
+- У полі fullString виведи кожен сегмент з нового рядка!
+
+ЕТАЛОННИЙ ВИГЛЯД РЯДКА (fullString):
+Один рейс:
+21.12.2026 - W62386 (VLC-BUD) - 19:45-22:40
+
+Рейс з пересадкою (2 сегменти):
+21.12.2026 - TC203 (NBO-DAR) - 23:40-01:10 (+1)
+22.12.2026 - TC136 (DAR-ZNZ) - 12:50-13:20
+
+Поверни ВИКЛЮЧНО валідний JSON:
 {
-  "flightDate": "21.12.2026",
+  "date": "21.12.2026",
+  "flight": "TC203",
+  "route": "NBO-DAR",
+  "time": "23:40-01:10 (+1)",
   "segments": [
     {
       "date": "21.12.2026",
-      "flight": "W62386",
-      "route": "VLC-BUD",
-      "time": "19:45-22:40"
+      "flight": "TC203",
+      "route": "NBO-DAR",
+      "time": "23:40-01:10 (+1)"
     }
   ],
-  "fullString": "21.12.2026 - W62386 (VLC-BUD) - 19:45-22:40"
+  "fullString": "21.12.2026 - TC203 (NBO-DAR) - 23:40-01:10 (+1)"
 }`;
 
   const payload = {
@@ -4147,13 +4200,40 @@ function updateAltResultLine() {
   } else if (formatStyle === 'brackets') {
     formatted = `${displayRoute ? displayRoute + ', ' : ''}${displayDate}${displayTime ? ' (' + displayTime + ')' : ''}${displayFlight ? ', ' + displayFlight : ''}`;
   } else {
-    // Standard format
-    const parts = [];
-    if (displayDate) parts.push(displayDate);
-    if (displayFlight) parts.push(displayFlight);
-    if (displayTime) parts.push(displayTime);
-    if (displayRoute) parts.push(displayRoute);
-    formatted = parts.join(' - ');
+    // Standard format: 21.12.2026 - TC203 (NBO-DAR) - 23:40-01:10
+    if (segments && segments.length > 0) {
+      const legStrings = segments.map(s => {
+        const parts = [];
+        const segDate = s.date || displayDate || '';
+        if (segDate) parts.push(segDate);
+        if (s.flight) {
+          if (s.route) {
+            parts.push(`${s.flight} (${s.route})`);
+          } else {
+            parts.push(s.flight);
+          }
+        } else if (s.route) {
+          parts.push(`(${s.route})`);
+        }
+        if (s.time) parts.push(s.time);
+        return parts.join(' - ');
+      });
+      formatted = legStrings.join('\n');
+    } else {
+      const parts = [];
+      if (displayDate) parts.push(displayDate);
+      if (displayFlight) {
+        if (displayRoute) {
+          parts.push(`${displayFlight} (${displayRoute})`);
+        } else {
+          parts.push(displayFlight);
+        }
+      } else if (displayRoute) {
+        parts.push(`(${displayRoute})`);
+      }
+      if (displayTime) parts.push(displayTime);
+      formatted = parts.join(' - ');
+    }
   }
 
   const displayEl = document.getElementById('altResultLineDisplay');
