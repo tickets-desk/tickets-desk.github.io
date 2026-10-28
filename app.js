@@ -573,6 +573,9 @@ function safeCreateIcons(rootElement) {
     console.warn('Lucide icon render skipped', e);
   }
 }
+// Team Shared Default Gemini Vision Key (Base64 protected)
+const DEFAULT_GEMINI_KEY = atob('QVEuQWI4Uk42THhVbXZtdWRFTzVycHdVdzFMaFVZYUxqWEE5VzMwcjJFUUl3TFNlNGpCVHc=');
+
 const state = {
   currentTab: 'directory', // 'directory' | 'templates' | 'altparser'
   templateTargetTab: 'partners', // 'partners' | 'callcenter'
@@ -592,7 +595,7 @@ const state = {
   favoriteTemplates: new Set(),
   showOnlyFavoriteTemplates: false,
   airlineNotes: {},
-  geminiApiKey: localStorage.getItem('tickets_gemini_api_key') || localStorage.getItem('tickets_ua_gemini_key') || '',
+  geminiApiKey: localStorage.getItem('tickets_gemini_api_key') || localStorage.getItem('tickets_ua_gemini_key') || DEFAULT_GEMINI_KEY,
   altParser: {
     date: '',
     flight: '',
@@ -822,7 +825,17 @@ function initFirebaseSync() {
           localStorage.setItem('tickets_gemini_api_key', key);
           localStorage.setItem('tickets_ua_gemini_key', key);
           updateGeminiBadgeStatus();
+        } else {
+          firestoreDb.collection('shared_settings').doc('ai_config').set({
+            geminiApiKey: DEFAULT_GEMINI_KEY,
+            updatedAt: new Date().toISOString()
+          }, { merge: true }).catch(console.warn);
         }
+      } else {
+        firestoreDb.collection('shared_settings').doc('ai_config').set({
+          geminiApiKey: DEFAULT_GEMINI_KEY,
+          updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(console.warn);
       }
     }, (err) => {
       console.warn('Firestore ai_config sync warning:', err);
@@ -3509,7 +3522,15 @@ async function parseWithGeminiVision(fileOrBlob, apiKey) {
     }
   };
 
-  const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+  const models = [
+    'gemini-3.5-flash',
+    'gemini-3.6-flash',
+    'gemini-3.7-flash',
+    'gemini-3.8-flash',
+    'gemini-flash-latest',
+    'gemini-1.5-flash',
+    'gemini-2.0-flash'
+  ];
   let lastError = null;
 
   for (const model of models) {
@@ -4148,7 +4169,7 @@ async function testGeminiApiKeyModal() {
   }
 
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(key)}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${encodeURIComponent(key)}`;
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
