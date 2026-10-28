@@ -592,7 +592,7 @@ const state = {
   favoriteTemplates: new Set(),
   showOnlyFavoriteTemplates: false,
   airlineNotes: {},
-  geminiApiKey: localStorage.getItem('tickets_gemini_api_key') || '',
+  geminiApiKey: localStorage.getItem('tickets_gemini_api_key') || localStorage.getItem('tickets_ua_gemini_key') || '',
   altParser: {
     date: '',
     flight: '',
@@ -810,6 +810,22 @@ function initFirebaseSync() {
       renderAirlineGrid();
     }, (err) => {
       console.warn('Firestore notes sync warning:', err);
+    });
+
+    // 4. Listen for Shared AI Config (Gemini Vision API Key for the team)
+    firestoreDb.collection('shared_settings').doc('ai_config').onSnapshot((doc) => {
+      if (doc.exists) {
+        const data = doc.data();
+        if (data && typeof data.geminiApiKey === 'string' && data.geminiApiKey.trim()) {
+          const key = data.geminiApiKey.trim();
+          state.geminiApiKey = key;
+          localStorage.setItem('tickets_gemini_api_key', key);
+          localStorage.setItem('tickets_ua_gemini_key', key);
+          updateGeminiBadgeStatus();
+        }
+      }
+    }, (err) => {
+      console.warn('Firestore ai_config sync warning:', err);
     });
 
   } catch (err) {
@@ -3493,7 +3509,7 @@ async function parseWithGeminiVision(fileOrBlob, apiKey) {
     }
   };
 
-  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  const models = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
   let lastError = null;
 
   for (const model of models) {
@@ -3721,14 +3737,14 @@ async function processAltImage(fileOrBlob) {
 
   if (progressContainer) progressContainer.classList.remove('hidden');
 
-  const apiKey = state.geminiApiKey || localStorage.getItem('tickets_gemini_api_key');
+  const apiKey = state.geminiApiKey || localStorage.getItem('tickets_gemini_api_key') || localStorage.getItem('tickets_ua_gemini_key');
 
   if (apiKey) {
-    // Mode 1: Gemini Vision AI (100% accuracy)
-    if (progressBar) progressBar.style.width = '35%';
+    // Mode: Pure Gemini Vision AI (100% accuracy)
+    if (progressBar) progressBar.style.width = '45%';
     if (percentText) percentText.textContent = 'AI...';
     if (statusText) {
-      statusText.innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500 animate-spin"></i><span class="text-purple-600 dark:text-purple-400 font-bold">Аналіз через Gemini Vision AI (100% точність)...</span>`;
+      statusText.innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500 animate-spin"></i><span class="text-purple-600 dark:text-purple-400 font-bold">Аналіз через Gemini Vision AI (суто ШІ)...</span>`;
       safeCreateIcons(statusText);
     }
 
@@ -3746,19 +3762,41 @@ async function processAltImage(fileOrBlob) {
 
         setTimeout(() => {
           if (progressContainer) progressContainer.classList.add('hidden');
-        }, 2200);
+        }, 2000);
 
         showToast('Рейс розпізнано через Gemini Vision AI ✨');
         return;
       }
     } catch (err) {
-      console.warn('Gemini Vision failed, falling back to Tesseract:', err);
-      showToast('Помилка Gemini API. Виконуємо OCR через Tesseract...');
+      console.warn('Gemini Vision error:', err);
+      if (progressBar) progressBar.style.width = '100%';
+      if (percentText) percentText.textContent = 'Помилка';
+      if (statusText) {
+        statusText.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-rose-500"></i><span class="text-rose-600 dark:text-rose-400 font-bold">Помилка Gemini API: ${escapeHtml(err.message || 'Перевірте ключ')}</span>`;
+        safeCreateIcons(statusText);
+      }
+      if (displayEl) {
+        displayEl.textContent = 'Помилка розпізнавання ШІ. Натисніть кнопку «Gemini AI» зверху, щоб перевірити API-ключ.';
+        displayEl.className = "p-4 rounded-xl bg-slate-950/90 border border-rose-500/50 font-mono text-sm sm:text-base font-bold text-rose-300 select-all tracking-wide break-words shadow-inner";
+      }
+      showToast('Помилка Gemini API. Перевірте ключ у налаштуваннях ⚙️', 'error');
+      return;
     }
   }
 
-  // Mode 2: Tesseract OCR with enhanced Canvas Preprocessing
-  await processWithTesseract(fileOrBlob);
+  // If no apiKey configured:
+  if (progressBar) progressBar.style.width = '0%';
+  if (percentText) percentText.textContent = '';
+  if (statusText) {
+    statusText.innerHTML = `<i data-lucide="key" class="w-3.5 h-3.5 text-amber-500"></i><span class="text-purple-600 dark:text-purple-400 font-bold">Потрібен ключ Gemini AI для зчитування скріншотів.</span>`;
+    safeCreateIcons(statusText);
+  }
+  if (displayEl) {
+    displayEl.textContent = 'Для зчитування скріншота через ШІ введіть Gemini API ключ (кнопка «Gemini AI» з іконкою ⚙️ зверху).';
+    displayEl.className = "p-4 rounded-xl bg-slate-950/90 border border-amber-500/50 font-mono text-sm sm:text-base font-bold text-amber-300 select-all tracking-wide break-words shadow-inner";
+  }
+  openGeminiSettingsModal();
+  showToast('Введіть безкоштовний Gemini API ключ для розпізнавання ШІ ✨', 'warning');
 }
 
 function parseFlightText(text) {
@@ -4021,7 +4059,7 @@ function openGeminiSettingsModal() {
   const input = document.getElementById('geminiApiKeyInput');
   const statusMsg = document.getElementById('geminiKeyStatusMsg');
   if (modal) modal.classList.remove('hidden');
-  const currentKey = state.geminiApiKey || localStorage.getItem('tickets_gemini_api_key') || '';
+  const currentKey = state.geminiApiKey || localStorage.getItem('tickets_gemini_api_key') || localStorage.getItem('tickets_ua_gemini_key') || '';
   if (input) input.value = currentKey;
   if (statusMsg) {
     if (currentKey) {
@@ -4048,21 +4086,90 @@ function saveGeminiApiKeyFromModal() {
     return;
   }
   localStorage.setItem('tickets_gemini_api_key', key);
+  localStorage.setItem('tickets_ua_gemini_key', key);
   state.geminiApiKey = key;
   updateGeminiBadgeStatus();
+
+  if (window.firebaseDb) {
+    window.firebaseDb.collection('shared_settings').doc('ai_config').set({
+      geminiApiKey: key,
+      updatedAt: new Date().toISOString()
+    }, { merge: true }).then(() => {
+      showToast('Gemini API ключ збережено та синхронізовано для всієї команди! ✨');
+    }).catch(err => {
+      console.warn('Firebase ai_config save error:', err);
+      showToast('Gemini API ключ збережено локально! ✨');
+    });
+  } else {
+    showToast('Gemini API ключ збережено! ✨');
+  }
+
   closeGeminiSettingsModal();
-  showToast('Gemini API ключ збережено! ✨');
 }
 
 function removeGeminiApiKey() {
   if (confirm('Видалити збережений Gemini API ключ?')) {
     localStorage.removeItem('tickets_gemini_api_key');
+    localStorage.removeItem('tickets_ua_gemini_key');
     state.geminiApiKey = '';
     const input = document.getElementById('geminiApiKeyInput');
     if (input) input.value = '';
     updateGeminiBadgeStatus();
+
+    if (window.firebaseDb) {
+      window.firebaseDb.collection('shared_settings').doc('ai_config').set({
+        geminiApiKey: '',
+        updatedAt: new Date().toISOString()
+      }, { merge: true }).catch(console.warn);
+    }
+
     closeGeminiSettingsModal();
-    showToast('Ключ видалено. Використовується стандартний OCR.');
+    showToast('Ключ видалено.');
+  }
+}
+
+async function testGeminiApiKeyModal() {
+  const input = document.getElementById('geminiApiKeyInput');
+  const key = input ? input.value.trim() : (state.geminiApiKey || '');
+  const statusMsg = document.getElementById('geminiKeyStatusMsg');
+  if (!key) {
+    if (statusMsg) {
+      statusMsg.className = "text-[11px] font-semibold py-1.5 px-3 rounded-lg bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800";
+      statusMsg.textContent = "Будь ласка, введіть ключ API перед тестуванням!";
+      statusMsg.classList.remove('hidden');
+    }
+    return;
+  }
+  if (statusMsg) {
+    statusMsg.className = "text-[11px] font-semibold py-1.5 px-3 rounded-lg bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800 flex items-center gap-1.5";
+    statusMsg.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Тестуємо зв\'язок з Gemini AI...</span>';
+    statusMsg.classList.remove('hidden');
+    safeCreateIcons(statusMsg);
+  }
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(key)}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: "ping" }] }]
+      })
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      throw new Error(`HTTP ${res.status}: ${err}`);
+    }
+    if (statusMsg) {
+      statusMsg.className = "text-[11px] font-semibold py-1.5 px-3 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5";
+      statusMsg.innerHTML = '<i data-lucide="check-check" class="w-3.5 h-3.5 text-emerald-500"></i><span>✓ Зв\'язок з Gemini Vision AI успішний! Ключ активний.</span>';
+      safeCreateIcons(statusMsg);
+    }
+  } catch (err) {
+    if (statusMsg) {
+      statusMsg.className = "text-[11px] font-semibold py-1.5 px-3 rounded-lg bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800";
+      statusMsg.textContent = `Помилка перевірки: ${err.message}`;
+    }
   }
 }
 
@@ -4081,13 +4188,13 @@ function toggleGeminiKeyVisibility() {
 }
 
 function updateGeminiBadgeStatus() {
-  const apiKey = state.geminiApiKey || localStorage.getItem('tickets_gemini_api_key');
+  const apiKey = state.geminiApiKey || localStorage.getItem('tickets_gemini_api_key') || localStorage.getItem('tickets_ua_gemini_key');
   const btnLabel = document.getElementById('geminiBtnLabel');
   const cfgBtn = document.getElementById('geminiConfigBtn');
   const badge = document.getElementById('altAiBadge');
 
   if (apiKey) {
-    if (btnLabel) btnLabel.textContent = 'Gemini AI ✨';
+    if (btnLabel) btnLabel.textContent = 'Суто ШІ ✨';
     if (cfgBtn) {
       cfgBtn.className = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-700 hover:bg-purple-200 transition-all shadow-xs";
     }
@@ -4095,7 +4202,7 @@ function updateGeminiBadgeStatus() {
       badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300 border border-purple-300 dark:border-purple-700";
       badge.onclick = openGeminiSettingsModal;
       badge.style.cursor = 'pointer';
-      badge.innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i><span>Gemini Vision AI активний (100% точність)</span>`;
+      badge.innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i><span>Суто ШІ: Gemini Vision активний (100% точність)</span>`;
       safeCreateIcons(badge);
     }
   } else {
@@ -4104,10 +4211,10 @@ function updateGeminiBadgeStatus() {
       cfgBtn.className = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-all shadow-xs";
     }
     if (badge) {
-      badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 cursor-pointer hover:bg-slate-200";
+      badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-200 dark:border-amber-800 cursor-pointer hover:bg-amber-100";
       badge.onclick = openGeminiSettingsModal;
       badge.style.cursor = 'pointer';
-      badge.innerHTML = `<i data-lucide="settings" class="w-3.5 h-3.5 text-slate-400"></i><span>Tesseract OCR (підключіть Gemini AI для 100% точності)</span>`;
+      badge.innerHTML = `<i data-lucide="key" class="w-3.5 h-3.5 text-amber-500"></i><span>Суто ШІ (підключіть Gemini AI)</span>`;
       safeCreateIcons(badge);
     }
   }
@@ -4119,6 +4226,7 @@ window.closeGeminiSettingsModal = closeGeminiSettingsModal;
 window.saveGeminiApiKeyFromModal = saveGeminiApiKeyFromModal;
 window.removeGeminiApiKey = removeGeminiApiKey;
 window.toggleGeminiKeyVisibility = toggleGeminiKeyVisibility;
+window.testGeminiApiKeyModal = testGeminiApiKeyModal;
 window.updateGeminiBadgeStatus = updateGeminiBadgeStatus;
 
 function onAltFieldChange() {

@@ -1116,7 +1116,7 @@
 
       <div class="space-y-3 text-xs">
         <p class="text-slate-600 dark:text-slate-300">
-          Підключіть безкоштовний <strong>Gemini 2.5 Flash API Key</strong> для 100% безпомилкового розпізнавання будь-яких скріншотів, складних рейсів зі стиковками, дрібних шрифтів та скорочених дат (наприклад, 12-21).
+          Підключіть безкоштовний <strong>Gemini Vision API Key</strong> для 100% безпомилкового розпізнавання будь-яких скріншотів (Dida, PKFARE, GDS, сайти АК), складних рейсів зі стиковками, дрібних шрифтів та скорочених дат.
         </p>
 
         <div class="p-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-200">
@@ -1147,19 +1147,27 @@
               <i data-lucide="eye" id="geminiEyeIcon" class="w-4 h-4"></i>
             </button>
           </div>
-          <p class="text-[10px] text-slate-400 mt-1">Ключ зберігається лише у вашому браузері (localStorage).</p>
+          <p class="text-[10px] text-slate-400 mt-1">Ключ зберігається локально та автоматично синхронізується через Firebase для всієї команди.</p>
         </div>
 
         <div id="geminiKeyStatusMsg" class="hidden text-[11px] font-semibold py-1.5 px-3 rounded-lg"></div>
       </div>
 
       <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
-        <button type="button" 
-                onclick="removeGeminiApiKey()" 
-                id="geminiRemoveKeyBtn"
-                class="px-3 py-2 text-xs font-semibold rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors">
-          Видалити ключ
-        </button>
+        <div class="flex items-center gap-2">
+          <button type="button" 
+                  onclick="removeGeminiApiKey()" 
+                  id="geminiRemoveKeyBtn"
+                  class="px-3 py-2 text-xs font-semibold rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors">
+            Видалити ключ
+          </button>
+          <button type="button" 
+                  onclick="testGeminiApiKeyModal()" 
+                  class="px-3 py-2 text-xs font-semibold rounded-xl text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-colors flex items-center gap-1 border border-purple-200 dark:border-purple-800">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
+            <span>Тест зв'язку</span>
+          </button>
+        </div>
 
         <div class="flex items-center gap-2">
           <button type="button" 
