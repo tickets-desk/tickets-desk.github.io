@@ -1548,7 +1548,7 @@ function renderCategoryPills() {
   const favCount = currentTemplates.filter(t => state.favoriteTemplates.has(t.id)).length;
 
   let html = '';
-  // Favorites pill (в…)
+  // Favorites pill
   const isFavActive = state.showOnlyFavoriteTemplates;
   html += `
     <button onclick="toggleShowOnlyFavoriteTemplates()"
@@ -1558,7 +1558,7 @@ function renderCategoryPills() {
                 : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-amber-400 hover:text-amber-500'
             }">
       <i data-lucide="star" class="w-3.5 h-3.5 ${isFavActive ? 'fill-white text-white' : 'text-amber-500 fill-amber-400'}"></i>
-      <span>РћР±СЂР°РЅС–</span>
+      <span>\u041E\u0431\u0440\u0430\u043D\u0456</span>
       <span class="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] ${isFavActive ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}">${favCount}</span>
     </button>
   `;
@@ -1572,7 +1572,7 @@ function renderCategoryPills() {
                   ? 'bg-sky-600 border-sky-600 text-white shadow-sm' 
                   : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-sky-400 hover:text-sky-600 dark:hover:text-sky-400'
               }">
-        ${cat === 'All' ? 'РЈСЃС– РєР°С‚РµРіРѕСЂС–С—' : escapeHtml(cat)}
+        ${cat === 'All' ? '\u0423\u0441\u0456 \u043A\u0430\u0442\u0435\u0433\u043E\u0440\u0456\u0457' : escapeHtml(cat)}
       </button>
     `;
   }).join('');
@@ -1618,20 +1618,20 @@ function renderTemplatesList() {
       container.innerHTML = `
         <div class="p-6 text-center text-xs text-slate-400 bg-white/50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
           <i data-lucide="star" class="w-8 h-8 mx-auto mb-2 text-amber-400 stroke-[1.5]"></i>
-          <p class="font-semibold text-slate-700 dark:text-slate-300">РќРµРјР°С” РѕР±СЂР°РЅРёС… С€Р°Р±Р»РѕРЅС–РІ</p>
-          <p class="mt-1 text-slate-400">РќР°С‚РёСЃРЅС–С‚СЊ РЅР° Р·С–СЂРѕС‡РєСѓ в… Р±С–Р»СЏ Р±СѓРґСЊ-СЏРєРѕРіРѕ С€Р°Р±Р»РѕРЅСѓ, С‰РѕР± Р·Р°РєСЂС–РїРёС‚Рё Р№РѕРіРѕ РІ РѕР±СЂР°РЅРёС….</p>
+          <p class="font-semibold text-slate-700 dark:text-slate-300">\u041D\u0435\u043C\u0430\u0454 \u043E\u0431\u0440\u0430\u043D\u0438\u0445 \u0448\u0430\u0431\u043B\u043E\u043D\u0456\u0432</p>
+          <p class="mt-1 text-slate-400">\u041D\u0430\u0442\u0438\u0441\u043D\u0456\u0442\u044C \u043D\u0430 \u0437\u0456\u0440\u043E\u0447\u043A\u0443 \u2605 \u0431\u0456\u043B\u044F \u0431\u0443\u0434\u044C-\u044F\u043A\u043E\u0433\u043E \u0448\u0430\u0431\u043B\u043E\u043D\u0443, \u0449\u043E\u0431 \u0437\u0430\u043A\u0440\u0456\u043F\u0438\u0442\u0438 \u0439\u043E\u0433\u043E \u0432 \u043E\u0431\u0440\u0430\u043D\u0438\u0445.</p>
         </div>
       `;
     } else if (state.templateTargetTab === 'callcenter') {
       container.innerHTML = `
         <div class="p-6 text-center text-xs text-slate-500 bg-white/50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
           <i data-lucide="headphones" class="w-8 h-8 mx-auto mb-2 text-slate-400 stroke-[1.5]"></i>
-          <p class="font-semibold text-slate-700 dark:text-slate-300">Р’РєР»Р°РґРєР° В«Р—РђРџРРўР РќРђ РљР¦В» РїРѕРєРё РїРѕСЂРѕР¶РЅСЏ</p>
-          <p class="mt-1 text-slate-400">РќР°С‚РёСЃРЅС–С‚СЊ РєРЅРѕРїРєСѓ РІРёС‰Рµ <strong>В«вћ• Р”РѕРґР°С‚Рё СЃРІС–Р№ С€Р°Р±Р»РѕРЅВ»</strong>, С‰РѕР± Р·Р±РµСЂРµРіС‚Рё РІРЅСѓС‚СЂС–С€РЅС– СЃРєСЂРёРїС‚Рё РґР»СЏ РїС–РґС‚СЂРёРјРєРё/РљР¦.</p>
+          <p class="font-semibold text-slate-700 dark:text-slate-300">\u0412\u043A\u043B\u0430\u0434\u043A\u0430 \u00AB\u0417\u0410\u041F\u0418\u0422\u0418 \u041D\u0410 \u041A\u0426\u00BB \u043F\u043E\u043A\u0438 \u043F\u043E\u0440\u043E\u0436\u043D\u044F</p>
+          <p class="mt-1 text-slate-400">\u041D\u0430\u0442\u0438\u0441\u043D\u0456\u0442\u044C \u043A\u043D\u043E\u043F\u043A\u0443 \u0432\u0438\u0449\u0435 <strong>\u00AB\u2795 \u0414\u043E\u0434\u0430\u0442\u0438 \u0441\u0432\u0456\u0439 \u0448\u0430\u0431\u043B\u043E\u043D\u00BB</strong>, \u0449\u043E\u0431 \u0437\u0431\u0435\u0440\u0435\u0433\u0442\u0438 \u0432\u043D\u0443\u0442\u0440\u0456\u0448\u043D\u0456 \u0441\u043A\u0440\u0438\u043F\u0442\u0438 \u0434\u043B\u044F \u043F\u0456\u0434\u0442\u0440\u0438\u043C\u043A\u0438/\u041A\u0426.</p>
         </div>
       `;
     } else {
-      container.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">РќРµРјР°С” С€Р°Р±Р»РѕРЅС–РІ Сѓ С†С–Р№ РєР°С‚РµРіРѕСЂС–С—</div>`;
+      container.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">\u041D\u0435\u043C\u0430\u0454 \u0448\u0430\u0431\u043B\u043E\u043D\u0456\u0432 \u0443 \u0446\u0456\u0439 \u043A\u0430\u0442\u0435\u0433\u043E\u0440\u0456\u0457</div>`;
     }
     safeCreateIcons(container);
     return;
@@ -1652,19 +1652,19 @@ function renderTemplatesList() {
             <span class="inline-flex items-center px-2 py-0.5 rounded-md font-mono text-xs font-bold bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-300">
               ${t.trigger}
             </span>
-            ${isFav ? '<span class="text-amber-500 text-xs font-bold">в…</span>' : ''}
+            ${isFav ? '<span class="text-amber-500 text-xs font-bold">\u2605</span>' : ''}
           </div>
           <div class="flex items-center gap-1">
             <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
               ${escapeHtml(t.category)}
             </span>
             <button onclick="event.stopPropagation(); toggleFavoriteTemplate('${t.id}')"
-                    title="${isFav ? 'Р’РёРґР°Р»РёС‚Рё Р· РѕР±СЂР°РЅРёС…' : 'Р”РѕРґР°С‚Рё РІ РѕР±СЂР°РЅС– в…'}"
+                    title="${isFav ? '\u0412\u0438\u0434\u0430\u043B\u0438\u0442\u0438 \u0437 \u043E\u0431\u0440\u0430\u043D\u0438\u0445' : '\u0414\u043E\u0434\u0430\u0442\u0438 \u0432 \u043E\u0431\u0440\u0430\u043D\u0456 \u2605'}"
                     class="p-1 rounded-md transition-colors ${isFav ? 'text-amber-500 hover:text-amber-600' : 'text-slate-400 hover:text-amber-500'}">
               <i data-lucide="star" class="w-3.5 h-3.5 ${isFav ? 'fill-amber-400 text-amber-500' : ''}"></i>
             </button>
             <button onclick="event.stopPropagation(); openEditTemplateModal('${t.id}')"
-                    title="Р РµРґР°РіСѓРІР°С‚Рё С€Р°Р±Р»РѕРЅ"
+                    title="\u0420\u0435\u0434\u0430\u0433\u0443\u0432\u0430\u0442\u0438 \u0448\u0430\u0431\u043B\u043E\u043D"
                     class="p-1 rounded-md text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/50 transition-colors">
               <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
             </button>
@@ -1686,10 +1686,10 @@ function renderTemplatesList() {
 function toggleFavoriteTemplate(id) {
   if (state.favoriteTemplates.has(id)) {
     state.favoriteTemplates.delete(id);
-    showToast('Р’РёРґР°Р»РµРЅРѕ Р· РѕР±СЂР°РЅРёС…');
+    showToast('\u0412\u0438\u0434\u0430\u043B\u0435\u043D\u043E \u0437 \u043E\u0431\u0440\u0430\u043D\u0438\u0445');
   } else {
     state.favoriteTemplates.add(id);
-    showToast('Р”РѕРґР°РЅРѕ РІ РѕР±СЂР°РЅС– С€Р°Р±Р»РѕРЅРё в…');
+    showToast('\u0414\u043E\u0434\u0430\u043D\u043E \u0432 \u043E\u0431\u0440\u0430\u043D\u0456 \u0448\u0430\u0431\u043B\u043E\u043D\u0438 \u2605');
   }
   localStorage.setItem('tickets_ua_favorite_templates', JSON.stringify([...state.favoriteTemplates]));
   renderCategoryPills();
