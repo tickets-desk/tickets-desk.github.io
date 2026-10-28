@@ -562,6 +562,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTemplateGenerator();
   initAltParser();
   initShortcuts();
+  initFirebaseSync();
   safeCreateIcons();
 });
 
@@ -593,6 +594,123 @@ function applyTheme(isDark) {
   if (icon) {
     icon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
     safeCreateIcons();
+  }
+}
+
+
+// ==========================================
+// Team Cloud Sync (Google Firebase Firestore)
+// ==========================================
+let firebaseApp = null;
+let firestoreDb = null;
+
+function getActiveFirebaseConfig() {
+  if (window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey && window.FIREBASE_CONFIG.projectId) {
+    return window.FIREBASE_CONFIG;
+  }
+  const saved = localStorage.getItem('tickets_ua_firebase_config');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (parsed.apiKey && parsed.projectId) return parsed;
+    } catch (e) {}
+  }
+  return null;
+}
+
+function initFirebaseSync() {
+  const config = getActiveFirebaseConfig();
+  const dot = document.getElementById('cloudSyncDot');
+  const text = document.getElementById('cloudSyncText');
+  const badge = document.getElementById('cloudSyncBadge');
+
+  if (!config || typeof firebase === 'undefined') {
+    if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-400';
+    if (text) text.textContent = 'Р›РѕРєР°Р»СЊРЅРёР№';
+    if (badge) badge.title = 'РџСЂР°С†СЋС” РІ Р»РѕРєР°Р»СЊРЅРѕРјСѓ СЂРµР¶РёРјС–. РџС–РґРєР»СЋС‡С–С‚СЊ Firebase РґР»СЏ РєРѕРјР°РЅРґРЅРѕС— СЃРёРЅС…СЂРѕРЅС–Р·Р°С†С–С—.';
+    return;
+  }
+
+  try {
+    if (!firebase.apps.length) {
+      firebaseApp = firebase.initializeApp(config);
+    } else {
+      firebaseApp = firebase.app();
+    }
+    firestoreDb = firebase.firestore();
+    window.firebaseDb = firestoreDb;
+
+    // Update UI badge
+    if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+    if (text) text.textContent = 'РљРѕРјР°РЅРґР° РѕРЅР»Р°Р№РЅ';
+    if (badge) {
+      badge.title = 'РҐРјР°СЂРЅР° СЃРёРЅС…СЂРѕРЅС–Р·Р°С†С–СЏ Р°РєС‚РёРІРЅР°: РїРѕСЃРёР»Р°РЅРЅСЏ С‚Р° РЅРѕС‚Р°С‚РєРё СЃРёРЅС…СЂРѕРЅС–Р·СѓСЋС‚СЊСЃСЏ РјС–Р¶ СѓСЃС–РјР° РѕРїРµСЂР°С‚РѕСЂР°РјРё РЅР°Р¶РёРІРѕ!';
+      badge.classList.add('border-emerald-300', 'dark:border-emerald-700/60');
+    }
+
+    // 1. Listen for Shared Airlines (URLs, names)
+    firestoreDb.collection('shared_airlines').onSnapshot((snapshot) => {
+      if (snapshot.empty) {
+        seedAirlinesToFirestore();
+      } else {
+        snapshot.docChanges().forEach((change) => {
+          const docData = change.doc.data();
+          const id = change.doc.id;
+          const idx = state.airlines.findIndex(a => a.id === id);
+          if (change.type === 'added' || change.type === 'modified') {
+            if (idx !== -1) {
+              state.airlines[idx] = { ...state.airlines[idx], ...docData };
+            } else {
+              state.airlines.push(docData);
+            }
+          } else if (change.type === 'removed') {
+            if (idx !== -1) state.airlines.splice(idx, 1);
+          }
+        });
+        localStorage.setItem('tickets_ua_custom_airlines', JSON.stringify(state.airlines));
+        updateHeaderCounters();
+        renderAirlineGrid();
+      }
+    }, (err) => {
+      console.warn('Firestore airlines sync warning:', err);
+    });
+
+    // 2. Listen for Shared Airline Notes
+    firestoreDb.collection('shared_airline_notes').onSnapshot((snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        const id = change.doc.id;
+        const data = change.doc.data();
+        if (change.type === 'added' || change.type === 'modified') {
+          state.airlineNotes[id] = data.text || '';
+        } else if (change.type === 'removed') {
+          delete state.airlineNotes[id];
+        }
+      });
+      localStorage.setItem('tickets_ua_airline_notes', JSON.stringify(state.airlineNotes));
+      renderAirlineGrid();
+    }, (err) => {
+      console.warn('Firestore notes sync warning:', err);
+    });
+
+  } catch (err) {
+    console.warn('Firebase init error:', err);
+    if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-500';
+    if (text) text.textContent = 'РџРѕРјРёР»РєР° С…РјР°СЂРё';
+  }
+}
+
+async function seedAirlinesToFirestore() {
+  if (!firestoreDb || !state.airlines.length) return;
+  const batch = firestoreDb.batch();
+  state.airlines.forEach(airline => {
+    const ref = firestoreDb.collection('shared_airlines').doc(airline.id);
+    batch.set(ref, airline, { merge: true });
+  });
+  try {
+    await batch.commit();
+    console.info('Airlines successfully seeded to Firestore');
+  } catch (e) {
+    console.warn('Error seeding airlines:', e);
   }
 }
 
@@ -1092,10 +1210,27 @@ function handleSaveAirlineNote(e) {
 
   if (text) {
     state.airlineNotes[id] = text;
-    showToast('Нотатку збережено!');
+    if (window.firebaseDb) {
+      window.firebaseDb.collection('shared_airline_notes').doc(id).set({
+        text: text,
+        updatedAt: new Date().toISOString()
+      }).then(() => showToast('РќРѕС‚Р°С‚РєСѓ Р·Р±РµСЂРµР¶РµРЅРѕ РґР»СЏ Р’РЎР†Р„Р‡ РєРѕРјР°РЅРґРё! рџЊђ'))
+        .catch(err => {
+          console.warn('Firebase note error:', err);
+          showToast('РќРѕС‚Р°С‚РєСѓ Р·Р±РµСЂРµР¶РµРЅРѕ Р»РѕРєР°Р»СЊРЅРѕ');
+        });
+    } else {
+      showToast('РќРѕС‚Р°С‚РєСѓ Р·Р±РµСЂРµР¶РµРЅРѕ!');
+    }
   } else {
     delete state.airlineNotes[id];
-    showToast('Нотатку очищено');
+    if (window.firebaseDb) {
+      window.firebaseDb.collection('shared_airline_notes').doc(id).delete()
+        .then(() => showToast('РќРѕС‚Р°С‚РєСѓ РѕС‡РёС‰РµРЅРѕ РґР»СЏ РІСЃС–С…'))
+        .catch(err => console.warn(err));
+    } else {
+      showToast('РќРѕС‚Р°С‚РєСѓ РѕС‡РёС‰РµРЅРѕ');
+    }
   }
 
   localStorage.setItem('tickets_ua_airline_notes', JSON.stringify(state.airlineNotes));
@@ -1108,9 +1243,13 @@ function handleDeleteAirlineNote() {
   if (state.airlineNotes[id]) {
     delete state.airlineNotes[id];
     localStorage.setItem('tickets_ua_airline_notes', JSON.stringify(state.airlineNotes));
+    if (window.firebaseDb) {
+      window.firebaseDb.collection('shared_airline_notes').doc(id).delete()
+        .catch(err => console.warn(err));
+    }
     renderAirlineGrid();
     closeAirlineNoteModal();
-    showToast('Нотатку видалено');
+    showToast('РќРѕС‚Р°С‚РєСѓ РІРёРґР°Р»РµРЅРѕ РґР»СЏ РІСЃС–С…');
   } else {
     closeAirlineNoteModal();
   }
@@ -1197,19 +1336,31 @@ function handleSaveEditAirline(e) {
 
   const index = state.airlines.findIndex(a => a.id === id);
   if (index !== -1) {
-    state.airlines[index] = {
+    const updated = {
       ...state.airlines[index],
       name,
       iata,
       manageBookingUrl: manageUrl,
       checkinUrl: checkinUrl || manageUrl,
-      logoUrl: logo
+      logoUrl: logo,
+      updatedAt: new Date().toISOString()
     };
+    state.airlines[index] = updated;
 
     localStorage.setItem('tickets_ua_custom_airlines', JSON.stringify(state.airlines));
     renderAirlineGrid();
     closeEditAirlineModal();
-    showToast(`Посилання для ${name} успішно збережено!`);
+
+    if (window.firebaseDb) {
+      window.firebaseDb.collection('shared_airlines').doc(id).set(updated, { merge: true })
+        .then(() => showToast(`РџРѕСЃРёР»Р°РЅРЅСЏ РґР»СЏ ${name} РѕРЅРѕРІР»РµРЅРѕ РґР»СЏ Р’РЎР†РҐ РѕРїРµСЂР°С‚РѕСЂС–РІ! рџЊђ`))
+        .catch(err => {
+          console.warn('Firebase error:', err);
+          showToast(`РџРѕСЃРёР»Р°РЅРЅСЏ РґР»СЏ ${name} Р·Р±РµСЂРµР¶РµРЅРѕ Р»РѕРєР°Р»СЊРЅРѕ`);
+        });
+    } else {
+      showToast(`РџРѕСЃРёР»Р°РЅРЅСЏ РґР»СЏ ${name} СѓСЃРїС–С€РЅРѕ Р·Р±РµСЂРµР¶РµРЅРѕ!`);
+    }
   }
 }
 
