@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Tickets UA Support Agent Dashboard
  * Core Application Logic
  */
@@ -626,8 +626,8 @@ function initFirebaseSync() {
 
   if (!config || typeof firebase === 'undefined') {
     if (dot) dot.className = 'w-2 h-2 rounded-full bg-slate-400';
-    if (text) text.textContent = 'Р›РѕРєР°Р»СЊРЅРёР№';
-    if (badge) badge.title = 'РџСЂР°С†СЋС” РІ Р»РѕРєР°Р»СЊРЅРѕРјСѓ СЂРµР¶РёРјС–. РџС–РґРєР»СЋС‡С–С‚СЊ Firebase РґР»СЏ РєРѕРјР°РЅРґРЅРѕС— СЃРёРЅС…СЂРѕРЅС–Р·Р°С†С–С—.';
+    if (text) text.textContent = '\u041B\u043E\u043A\u0430\u043B\u044C\u043D\u0438\u0439';
+    if (badge) badge.title = '\u041F\u0440\u0430\u0446\u044E\u0454 \u0432 \u043B\u043E\u043A\u0430\u043B\u044C\u043D\u043E\u043C\u0443 \u0440\u0435\u0436\u0438\u043C\u0456';
     return;
   }
 
@@ -642,9 +642,9 @@ function initFirebaseSync() {
 
     // Update UI badge
     if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
-    if (text) text.textContent = 'РљРѕРјР°РЅРґР° РѕРЅР»Р°Р№РЅ';
+    if (text) text.textContent = '\u041A\u043E\u043C\u0430\u043D\u0434\u0430 \u043E\u043D\u043B\u0430\u0439\u043D';
     if (badge) {
-      badge.title = 'РҐРјР°СЂРЅР° СЃРёРЅС…СЂРѕРЅС–Р·Р°С†С–СЏ Р°РєС‚РёРІРЅР°: РїРѕСЃРёР»Р°РЅРЅСЏ С‚Р° РЅРѕС‚Р°С‚РєРё СЃРёРЅС…СЂРѕРЅС–Р·СѓСЋС‚СЊСЃСЏ РјС–Р¶ СѓСЃС–РјР° РѕРїРµСЂР°С‚РѕСЂР°РјРё РЅР°Р¶РёРІРѕ!';
+      badge.title = '\u0425\u043C\u0430\u0440\u043D\u0430 \u0441\u0438\u043D\u0445\u0440\u043E\u043D\u0456\u0437\u0430\u0446\u0456\u044F \u0430\u043A\u0442\u0438\u0432\u043D\u0430';
       badge.classList.add('border-emerald-300', 'dark:border-emerald-700/60');
     }
 
@@ -695,7 +695,7 @@ function initFirebaseSync() {
   } catch (err) {
     console.warn('Firebase init error:', err);
     if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-500';
-    if (text) text.textContent = 'РџРѕРјРёР»РєР° С…РјР°СЂРё';
+    if (text) text.textContent = '\u041F\u043E\u043C\u0438\u043B\u043A\u0430 \u0445\u043C\u0430\u0440\u0438';
   }
 }
 
