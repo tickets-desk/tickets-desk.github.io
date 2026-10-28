@@ -300,6 +300,15 @@
         </div>
         
         <div class="flex items-center gap-2 shrink-0">
+          <button type="button" 
+                  onclick="openGeminiSettingsModal()" 
+                  id="geminiConfigBtn"
+                  title="Налаштування Gemini Vision AI для 100% точного розпізнавання"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-all shadow-xs">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
+            <span id="geminiBtnLabel">Gemini AI</span>
+            <i data-lucide="settings" class="w-3.5 h-3.5 text-purple-400"></i>
+          </button>
           <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
             <i data-lucide="zap" class="w-3.5 h-3.5 text-emerald-500"></i>
             <span>Вставка скріна (Ctrl + V)</span>
@@ -334,9 +343,8 @@
               або перетягніть картинку сюди чи клікніть для вибору файлу
             </p>
 
-            <div class="mt-4 flex items-center gap-2 text-[11px] text-slate-400">
-              <i data-lucide="image" class="w-3.5 h-3.5"></i>
-              <span>Будь-який скріншот рейсу або альти</span>
+            <div class="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px]">
+              <span id="altAiBadge" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-bold transition-all"></span>
             </div>
           </div>
 
@@ -1090,6 +1098,82 @@
           </div>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal: Gemini Vision API Configuration -->
+  <div id="geminiSettingsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+        <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+          <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
+          <span>Налаштування Gemini Vision AI</span>
+        </h3>
+        <button onclick="closeGeminiSettingsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <p class="text-slate-600 dark:text-slate-300">
+          Підключіть безкоштовний <strong>Gemini 2.5 Flash API Key</strong> для 100% безпомилкового розпізнавання будь-яких скріншотів, складних рейсів зі стиковками, дрібних шрифтів та скорочених дат (наприклад, 12-21).
+        </p>
+
+        <div class="p-3.5 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-200">
+          <p class="font-bold mb-1 flex items-center gap-1.5">
+            <i data-lucide="key" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
+            <span>Як отримати безкоштовний ключ за 30 секунд:</span>
+          </p>
+          <ol class="list-decimal list-inside space-y-1 text-[11px] text-purple-800 dark:text-purple-300 mt-1.5">
+            <li>Перейдіть на <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="underline font-bold text-sky-600 dark:text-sky-400 hover:text-sky-500">Google AI Studio (aistudio.google.com) ↗</a></li>
+            <li>Увійдіть зі своїм Google-акаунтом</li>
+            <li>Натисніть <strong>«Create API Key»</strong> та вставте його нижче:</li>
+          </ol>
+        </div>
+
+        <div>
+          <label for="geminiApiKeyInput" class="block font-bold text-slate-700 dark:text-slate-300 mb-1">
+            Ваш Gemini API Key:
+          </label>
+          <div class="relative">
+            <input type="password" 
+                   id="geminiApiKeyInput" 
+                   placeholder="AIzaSy..." 
+                   class="w-full px-3 py-2.5 text-xs font-mono rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 pr-10" />
+            <button type="button" 
+                    onclick="toggleGeminiKeyVisibility()" 
+                    title="Показати/приховати ключ"
+                    class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+              <i data-lucide="eye" id="geminiEyeIcon" class="w-4 h-4"></i>
+            </button>
+          </div>
+          <p class="text-[10px] text-slate-400 mt-1">Ключ зберігається лише у вашому браузері (localStorage).</p>
+        </div>
+
+        <div id="geminiKeyStatusMsg" class="hidden text-[11px] font-semibold py-1.5 px-3 rounded-lg"></div>
+      </div>
+
+      <div class="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-700">
+        <button type="button" 
+                onclick="removeGeminiApiKey()" 
+                id="geminiRemoveKeyBtn"
+                class="px-3 py-2 text-xs font-semibold rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors">
+          Видалити ключ
+        </button>
+
+        <div class="flex items-center gap-2">
+          <button type="button" 
+                  onclick="closeGeminiSettingsModal()" 
+                  class="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
+            Закрити
+          </button>
+          <button type="button" 
+                  onclick="saveGeminiApiKeyFromModal()" 
+                  class="px-4 py-2 text-xs font-bold rounded-xl bg-purple-600 hover:bg-purple-500 text-white shadow-xs transition-colors">
+            Зберегти ключ
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 

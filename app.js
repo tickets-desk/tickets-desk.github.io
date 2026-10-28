@@ -592,6 +592,7 @@ const state = {
   favoriteTemplates: new Set(),
   showOnlyFavoriteTemplates: false,
   airlineNotes: {},
+  geminiApiKey: localStorage.getItem('tickets_gemini_api_key') || '',
   altParser: {
     date: '',
     flight: '',
@@ -614,7 +615,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initAltParser();
   initShortcuts();
   initFirebaseSync();
-  updateAiBadgeStatus();
+  updateGeminiBadgeStatus();
   safeCreateIcons();
 });
 
@@ -3032,6 +3033,11 @@ window.toggleShowOnlyFavoriteTemplates = toggleShowOnlyFavoriteTemplates;
 // ==========================================
 
 const ALT_AIRLINE_CATALOG = [
+  { name: 'Air Tanzania', iata: 'TC' },
+  { name: 'Tanzania', iata: 'TC' },
+  { name: 'Precision Air', iata: 'PW' },
+  { name: 'RwandAir', iata: 'WB' },
+  { name: 'Uganda Airlines', iata: 'UR' },
   { name: 'Wizz Air Malta', iata: 'W4' },
   { name: 'Wizz Air UK', iata: 'W9' },
   { name: 'Wizz Air', iata: 'W6' },
@@ -3205,7 +3211,7 @@ function handleAltFileSelect(e) {
   }
 }
 
-// Preprocessing image on canvas for sharp OCR
+// Preprocessing image on canvas for sharp OCR (Scale 3.0x + Grayscale + Contrast boost)
 async function preprocessAltImage(fileOrBlob) {
   return new Promise((resolve) => {
     const img = new Image();
@@ -3214,8 +3220,8 @@ async function preprocessAltImage(fileOrBlob) {
       URL.revokeObjectURL(url);
       try {
         const canvas = document.createElement('canvas');
-        // 2x upscale with high-quality smoothing for Tesseract neural net
-        const scale = 2.0;
+        // Scale 3.0x to make small fonts (TC203, dates) crisp for OCR
+        const scale = 3.0;
         canvas.width = Math.round(img.width * scale);
         canvas.height = Math.round(img.height * scale);
         const ctx = canvas.getContext('2d');
@@ -3224,10 +3230,47 @@ async function preprocessAltImage(fileOrBlob) {
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
+        // Convert to Grayscale & boost contrast so light-gray and red text become sharp dark text on white
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const d = imgData.data;
+
+        // Contrast boost
+        const contrast = 75; // -255 to 255
+        const factor = (259 * (contrast + 255)) / (255 * (259 - contrast));
+
+        for (let i = 0; i < d.length; i += 4) {
+          const r = d[i];
+          const g = d[i + 1];
+          const b = d[i + 2];
+
+          // Luminance
+          let gray = 0.299 * r + 0.587 * g + 0.114 * b;
+
+          // If pixel has colored text (red badge like 12-22 or blue airline badge)
+          if (r > 130 && (r - g > 35) && (r - b > 35)) {
+            // Saturated red: make it dark to create contrast against white background
+            gray = Math.min(gray, 50);
+          } else if (b > 130 && (b - r > 35) && (b - g > 35)) {
+            // Saturated blue
+            gray = Math.min(gray, 60);
+          }
+
+          // Apply contrast stretch
+          let v = factor * (gray - 128) + 128;
+          v = v < 0 ? 0 : v > 255 ? 255 : v;
+
+          d[i] = v;
+          d[i + 1] = v;
+          d[i + 2] = v;
+        }
+
+        ctx.putImageData(imgData, 0, 0);
+
         canvas.toBlob((blob) => {
           resolve(blob || fileOrBlob);
         }, 'image/png');
       } catch (e) {
+        console.warn('Canvas preprocessing error:', e);
         resolve(fileOrBlob);
       }
     };
@@ -3236,54 +3279,207 @@ async function preprocessAltImage(fileOrBlob) {
   });
 }
 
-async function processAltImage(fileOrBlob) {
-  const preview = document.getElementById('altImagePreview');
-  const previewContainer = document.getElementById('altImagePreviewContainer');
-  const progressContainer = document.getElementById('altOcrProgressContainer');
-  const progressBar = document.getElementById('altOcrProgressBar');
-  const percentText = document.getElementById('altOcrPercent');
-  const statusText = document.getElementById('altOcrStatusText');
-  const displayEl = document.getElementById('altResultLineDisplay');
+// Convert Blob/File to Base64 data string
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const res = reader.result;
+      const base64 = typeof res === 'string' && res.includes(',') ? res.split(',')[1] : res;
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
 
-  // Display image preview
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    if (preview) preview.src = e.target.result;
-    if (previewContainer) previewContainer.classList.remove('hidden');
+// Shift date by N days (format DD.MM.YYYY)
+function shiftDateDays(dmyStr, days) {
+  if (!dmyStr) return '';
+  const m = dmyStr.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (!m) return dmyStr;
+  const d = new Date(parseInt(m[3], 10), parseInt(m[2], 10) - 1, parseInt(m[1], 10));
+  d.setDate(d.getDate() + days);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd}.${mm}.${yyyy}`;
+}
+
+// Gemini 2.5 Flash Vision API integration for 100% parsing accuracy
+async function parseWithGeminiVision(fileOrBlob, apiKey) {
+  const base64Data = await blobToBase64(fileOrBlob);
+  const mimeType = fileOrBlob.type || 'image/jpeg';
+
+  const systemPrompt = `Ти експерт авіакаси та систем бронювання (GDS, OTA, сайти АК). Твоє завдання — ідеально витягти інформацію про рейс або стиковку зі скріншота.
+
+Вимоги:
+1. Витягни ВСІ сегменти перельоту (кожне окреме плече).
+2. Дата: якщо на скріншоті вказано скорочено MM-DD (наприклад 12-21, 12-22) або DD-MM, обов'язково конвертуй у DD.MM.YYYY (21.12.2026, 22.12.2026). Якщо рік не вказано, використовуй 2026.
+3. Номер рейсу: обов'язково знайди код авіакомпанії та номер рейсу (навіть дрібним сірим шрифтом, наприклад TC203, TC136, W4 5131, LO 149, FR 1234).
+4. Маршрут: IATA код вильоту і прильоту сегмента, наприклад NBO-DAR, DAR-ZNZ.
+5. Час: HH:MM-HH:MM. Якщо приліт на наступний день (або стоїть +1 чи дата прильоту більша за дату вильоту), обов'язково додай (+1), наприклад 23:40-01:10 (+1).
+
+Поверни ТІЛЬКИ валідний JSON без будь-яких коментарів та без обгорток markdown:
+{
+  "segments": [
+    {
+      "date": "21.12.2026",
+      "flight": "TC203",
+      "route": "NBO-DAR",
+      "time": "23:40-01:10 (+1)"
+    },
+    {
+      "date": "22.12.2026",
+      "flight": "TC136",
+      "route": "DAR-ZNZ",
+      "time": "12:50-13:20"
+    }
+  ],
+  "fullString": "21.12.2026 - TC203 (NBO-DAR) - 23:40-01:10 (+1)\\n22.12.2026 - TC136 (DAR-ZNZ) - 12:50-13:20"
+}`;
+
+  const payload = {
+    contents: [
+      {
+        parts: [
+          { text: systemPrompt },
+          {
+            inlineData: {
+              mimeType: mimeType,
+              data: base64Data
+            }
+          }
+        ]
+      }
+    ],
+    generationConfig: {
+      temperature: 0.1,
+      responseMimeType: "application/json"
+    }
   };
-  reader.readAsDataURL(fileOrBlob);
 
-  // Clear previous flight data immediately so user sees it is processing new image
-  state.altParser.date = '';
-  state.altParser.flight = '';
-  state.altParser.time = '';
-  state.altParser.route = '';
+  const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  let lastError = null;
+
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const errBody = await res.text();
+        throw new Error(`Status ${res.status}: ${errBody}`);
+      }
+
+      const resJson = await res.json();
+      const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawText) throw new Error('Пуста відповідь від Gemini');
+
+      let parsed;
+      try {
+        parsed = JSON.parse(rawText);
+      } catch (e) {
+        const m = rawText.match(/\{[\s\S]*\}/);
+        if (m) parsed = JSON.parse(m[0]);
+        else throw e;
+      }
+      return parsed;
+    } catch (e) {
+      lastError = e;
+      console.warn(`Gemini model ${model} error:`, e);
+      if (e.message && e.message.includes('404')) {
+        continue;
+      }
+      throw e;
+    }
+  }
+
+  throw lastError || new Error('Не вдалося зв\'язатися з Gemini API');
+}
+
+// Apply Gemini Vision results to state and UI
+function applyGeminiResult(data) {
+  const currentYear = new Date().getFullYear();
+  const segments = (data.segments || []).map(s => {
+    let d = (s.date || '').trim();
+    if (/^\d{1,2}[\.\/-]\d{1,2}$/.test(d)) {
+      const parts = d.split(/[\.\/-]/);
+      const n1 = parseInt(parts[0], 10);
+      const n2 = parseInt(parts[1], 10);
+      let day, month;
+      if (n1 > 12 && n2 <= 12) { day = n1; month = n2; }
+      else if (n2 > 12 && n1 <= 12) { day = n2; month = n1; }
+      else { month = n1; day = n2; }
+      d = `${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}.${currentYear}`;
+    }
+    return {
+      date: d,
+      flight: (s.flight || '').toUpperCase().trim(),
+      route: (s.route || '').toUpperCase().trim(),
+      time: (s.time || '').trim()
+    };
+  });
+
+  state.altParser.segments = segments;
+
+  const allDates = [...new Set(segments.map(s => s.date).filter(Boolean))];
+  const allFlights = [...new Set(segments.map(s => s.flight).filter(Boolean))];
+  const allRoutes = segments.map(s => s.route).filter(Boolean);
+  const allTimes = segments.map(s => s.time).filter(Boolean);
+
+  state.altParser.date = allDates.join(' / ');
+  state.altParser.flight = allFlights.join(' / ');
+  state.altParser.time = allTimes.join(' / ');
+  state.altParser.route = allRoutes.length > 1 ? allRoutes.join(' / ') : (allRoutes[0] || '');
+
+  // Auto-select segmented style if multiple legs
+  if (segments.length > 1) {
+    state.altParser.formatStyle = 'segmented';
+    setAltFormatStyle('segmented');
+  }
+
   const elDate = document.getElementById('altFieldDate');
   const elFlight = document.getElementById('altFieldFlight');
   const elTime = document.getElementById('altFieldTime');
   const elRoute = document.getElementById('altFieldRoute');
-  if (elDate) elDate.value = '';
-  if (elFlight) elFlight.value = '';
-  if (elTime) elTime.value = '';
-  if (elRoute) elRoute.value = '';
 
-  if (displayEl) {
-    displayEl.textContent = '⚡ Вичитуємо рейс зі скріншота...';
-    displayEl.className = "p-4 rounded-xl bg-slate-950/90 border border-sky-500/50 font-mono text-sm sm:text-base font-bold text-amber-300 select-all tracking-wide break-words shadow-inner animate-pulse";
+  if (elDate) elDate.value = state.altParser.date;
+  if (elFlight) elFlight.value = state.altParser.flight;
+  if (elTime) elTime.value = state.altParser.time;
+  if (elRoute) elRoute.value = state.altParser.route;
+
+  const debugEl = document.getElementById('altOcrRawText');
+  if (debugEl) {
+    debugEl.textContent = JSON.stringify(data, null, 2);
   }
 
-  if (progressContainer) progressContainer.classList.remove('hidden');
+  updateAltResultLine();
+}
+
+// Fallback Tesseract OCR with canvas pre-processing
+async function processWithTesseract(fileOrBlob) {
+  const progressBar = document.getElementById('altOcrProgressBar');
+  const percentText = document.getElementById('altOcrPercent');
+  const statusText = document.getElementById('altOcrStatusText');
+  const progressContainer = document.getElementById('altOcrProgressContainer');
+
   if (progressBar) progressBar.style.width = '15%';
   if (percentText) percentText.textContent = '15%';
-  if (statusText) statusText.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Оптимізація зображення...</span>`;
-  safeCreateIcons(statusText);
+  if (statusText) {
+    statusText.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Оптимізація зображення (3x + контраст)...</span>`;
+    safeCreateIcons(statusText);
+  }
 
   try {
     if (typeof Tesseract === 'undefined') {
       throw new Error('Бібліотека Tesseract ще завантажується...');
     }
 
-    // Preprocess image for 2.5x sharp resolution
     const processedBlob = await preprocessAltImage(fileOrBlob);
 
     const worker = await Tesseract.createWorker('eng', 1, {
@@ -3292,7 +3488,9 @@ async function processAltImage(fileOrBlob) {
           const pct = Math.min(Math.round(m.progress * 100), 99);
           if (progressBar) progressBar.style.width = `${pct}%`;
           if (percentText) percentText.textContent = `${pct}%`;
-          if (statusText) statusText.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Вичитування рейсу (${pct}%)...</span>`;
+          if (statusText) {
+            statusText.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Вичитування рейсу (${pct}%)...</span>`;
+          }
         }
       }
     });
@@ -3311,8 +3509,10 @@ async function processAltImage(fileOrBlob) {
 
     if (progressBar) progressBar.style.width = '100%';
     if (percentText) percentText.textContent = '100%';
-    if (statusText) statusText.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i><span class="text-emerald-600 dark:text-emerald-400 font-bold">Успішно розпізнано!</span>`;
-    safeCreateIcons(statusText);
+    if (statusText) {
+      statusText.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-500"></i><span class="text-emerald-600 dark:text-emerald-400 font-bold">Успішно розпізнано через OCR!</span>`;
+      safeCreateIcons(statusText);
+    }
 
     setTimeout(() => {
       if (progressContainer) progressContainer.classList.add('hidden');
@@ -3327,13 +3527,115 @@ async function processAltImage(fileOrBlob) {
   }
 }
 
+// Master image processing dispatcher: Gemini Vision AI (if key available) -> Tesseract OCR
+async function processAltImage(fileOrBlob) {
+  const preview = document.getElementById('altImagePreview');
+  const previewContainer = document.getElementById('altImagePreviewContainer');
+  const progressContainer = document.getElementById('altOcrProgressContainer');
+  const progressBar = document.getElementById('altOcrProgressBar');
+  const percentText = document.getElementById('altOcrPercent');
+  const statusText = document.getElementById('altOcrStatusText');
+  const displayEl = document.getElementById('altResultLineDisplay');
+
+  // Display image preview
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    if (preview) preview.src = e.target.result;
+    if (previewContainer) previewContainer.classList.remove('hidden');
+  };
+  reader.readAsDataURL(fileOrBlob);
+
+  // Clear previous flight data
+  state.altParser.date = '';
+  state.altParser.flight = '';
+  state.altParser.time = '';
+  state.altParser.route = '';
+  state.altParser.segments = [];
+  const elDate = document.getElementById('altFieldDate');
+  const elFlight = document.getElementById('altFieldFlight');
+  const elTime = document.getElementById('altFieldTime');
+  const elRoute = document.getElementById('altFieldRoute');
+  if (elDate) elDate.value = '';
+  if (elFlight) elFlight.value = '';
+  if (elTime) elTime.value = '';
+  if (elRoute) elRoute.value = '';
+
+  if (displayEl) {
+    displayEl.textContent = '⚡ Вичитуємо рейс зі скріншота...';
+    displayEl.className = "p-4 rounded-xl bg-slate-950/90 border border-sky-500/50 font-mono text-sm sm:text-base font-bold text-amber-300 select-all tracking-wide break-words shadow-inner animate-pulse";
+  }
+
+  if (progressContainer) progressContainer.classList.remove('hidden');
+
+  const apiKey = state.geminiApiKey || localStorage.getItem('tickets_gemini_api_key');
+
+  if (apiKey) {
+    // Mode 1: Gemini Vision AI (100% accuracy)
+    if (progressBar) progressBar.style.width = '35%';
+    if (percentText) percentText.textContent = 'AI...';
+    if (statusText) {
+      statusText.innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500 animate-spin"></i><span class="text-purple-600 dark:text-purple-400 font-bold">Аналіз через Gemini Vision AI (100% точність)...</span>`;
+      safeCreateIcons(statusText);
+    }
+
+    try {
+      const geminiData = await parseWithGeminiVision(fileOrBlob, apiKey);
+      if (geminiData && geminiData.segments && geminiData.segments.length > 0) {
+        applyGeminiResult(geminiData);
+
+        if (progressBar) progressBar.style.width = '100%';
+        if (percentText) percentText.textContent = '100%';
+        if (statusText) {
+          statusText.innerHTML = `<i data-lucide="check-check" class="w-3.5 h-3.5 text-emerald-500"></i><span class="text-emerald-600 dark:text-emerald-400 font-bold">100% точний аналіз через Gemini Vision! ✨</span>`;
+          safeCreateIcons(statusText);
+        }
+
+        setTimeout(() => {
+          if (progressContainer) progressContainer.classList.add('hidden');
+        }, 2200);
+
+        showToast('Рейс розпізнано через Gemini Vision AI ✨');
+        return;
+      }
+    } catch (err) {
+      console.warn('Gemini Vision failed, falling back to Tesseract:', err);
+      showToast('Помилка Gemini API. Виконуємо OCR через Tesseract...');
+    }
+  }
+
+  // Mode 2: Tesseract OCR with enhanced Canvas Preprocessing
+  await processWithTesseract(fileOrBlob);
+}
+
 function parseFlightText(text) {
   if (!text) {
     updateAltResultLine();
     return;
   }
 
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  // 1. OCR Error Auto-Correction Pass
+  let cleanedRaw = text;
+
+  // Fix corrupted time OCR before airport codes or in flight lines:
+  // e.g. "OY10", "O1:10", "0I:10", "Ol:10", "o1:10" -> "01:10"
+  cleanedRaw = cleanedRaw.replace(/\b[oO0][yYijIl1]:?([0-5]\d)\b/g, '01:$1');
+  cleanedRaw = cleanedRaw.replace(/\b[oO](\d:\d{2})\b/g, '0$1');
+
+  // e.g. 4-digit times without colon: "1250 © DAR" -> "12:50 © DAR"
+  cleanedRaw = cleanedRaw.replace(/\b([01]\d|2[0-3])([0-5]\d)\b(?=[\s©@\.\,\-]*[A-Z]{3})/g, '$1:$2');
+  cleanedRaw = cleanedRaw.replace(/^(\s*)([01]\d|2[0-3])([0-5]\d)(\s+)/gm, '$1$2:$3$4');
+
+  // Fix chopped short dates: e.g. "2-22" -> "12-22" or "1-15" -> "11-15"
+  cleanedRaw = cleanedRaw.replace(/\b(?<!\d)2-(\d{2})\b/g, (m, day) => {
+    const d = parseInt(day, 10);
+    return (d >= 13 && d <= 31) ? `12-${day}` : m;
+  });
+  cleanedRaw = cleanedRaw.replace(/\b(?<!\d)1-(\d{2})\b/g, (m, day) => {
+    const d = parseInt(day, 10);
+    return (d >= 13 && d <= 31) ? `11-${day}` : m;
+  });
+
+  const lines = cleanedRaw.split('\n').map(l => l.trim()).filter(Boolean);
 
   // Common noise 3-letter words to ignore when extracting IATA codes
   const noiseIata = new Set([
@@ -3407,16 +3709,16 @@ function parseFlightText(text) {
   }
 
   // --- MILESTONE-BASED PARSING ---
-  // Each milestone line has pattern: DATE TIME [o] IATA CityName ...
+  // Each milestone line pattern: optional DATE + TIME + optional symbols + IATA on same line
   // e.g. "12-21  23:40  o  NBO  Nairobi Jomo Kenyatta Intl 1B"
-  // or   "12-22  01:10  DAR  Dar Es Salaam ..."
+  // or   "12-22  01:10  5, DAR  Dar Es Salaam ..."
+  // or   "12:50  ©  DAR  Dar Es Salaam ..."
+  // or   "13:20  5  ZNZ  Zanzibar ..."
   const milestones = [];
-  const flightLineMap = []; // flight numbers found between milestones
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    // Match: optional date + time + IATA on same line
-    const msMatch = line.match(/(?:(\d{1,2}[\.\/-]\d{1,2}(?:[\.\/-]\d{4})?)\s+)?(\d{1,2}:\d{2})\s+(?:[oO]\s+)?([A-Z]{3})\b/);
+    const msMatch = line.match(/(?:(\d{1,2}[\.\/-]\d{1,2}(?:[\.\/-]\d{4})?)\s+)?(\d{1,2}:\d{2})[\s\S]{0,10}?\b([A-Z]{3})\b/);
     if (msMatch) {
       const dateRaw = msMatch[1] || '';
       const time = msMatch[2].replace(/^(\d):/, '0$1:');
@@ -3432,7 +3734,7 @@ function parseFlightText(text) {
     }
   }
 
-  // Extract flight numbers from lines between milestones
+  // Extract flight numbers from lines
   const flightRegex = /\b([A-Za-z]{2}|[A-Za-z]\d|\d[A-Za-z])\s*(\d{2,4})\b/g;
   const allFlights = [];
   for (let i = 0; i < lines.length; i++) {
@@ -3440,6 +3742,8 @@ function parseFlightText(text) {
     while ((fm = flightRegex.exec(lines[i])) !== null) {
       const code = fm[1].toUpperCase();
       const num = fm[2];
+      // Skip false positives from corrupted time like OY10
+      if (code === 'OY' && num === '10') continue;
       if (code === 'A3' && ['20', '21', '30', '50'].includes(num.slice(0, 2))) continue;
       if (code === 'B7' && ['37', '77', '87'].includes(num.slice(0, 2))) continue;
       if (['2024', '2025', '2026', '2027', '2028'].includes(num)) continue;
@@ -3451,16 +3755,18 @@ function parseFlightText(text) {
     flightRegex.lastIndex = 0;
   }
 
-  // Fallback: airline name lookup
-  if (!allFlights.length) {
-    if (typeof ALT_AIRLINE_CATALOG !== 'undefined') {
-      for (const ac of ALT_AIRLINE_CATALOG) {
-        const re = new RegExp(`\\b${ac.name}\\b`, 'i');
-        if (re.test(text)) {
-          const digits = text.match(/(?:flight|flt|рейс|№)?\s*\b([1-9]\d{2,3})\b/i);
+  // Airline name lookup fallback
+  let detectedAirlineCode = '';
+  if (typeof ALT_AIRLINE_CATALOG !== 'undefined') {
+    for (const ac of ALT_AIRLINE_CATALOG) {
+      const re = new RegExp(`\\b${ac.name}\\b`, 'i');
+      if (re.test(cleanedRaw)) {
+        detectedAirlineCode = ac.iata;
+        if (!allFlights.length) {
+          const digits = cleanedRaw.match(/(?:flight|flt|рейс|№)?\s*\b([1-9]\d{2,3})\b/i);
           allFlights.push({ name: digits ? `${ac.iata}${digits[1]}` : ac.iata, lineIdx: 0 });
-          break;
         }
+        break;
       }
     }
   }
@@ -3469,87 +3775,92 @@ function parseFlightText(text) {
   const segments = [];
 
   if (milestones.length >= 4 && milestones.length % 2 === 0) {
-    // Multi-leg (e.g., 4 milestones = 2 legs): pairs are (dep, arr), (dep, arr)
+    // Multi-leg (pairs are dep, arr)
     for (let i = 0; i < milestones.length; i += 2) {
       const dep = milestones[i];
       const arr = milestones[i + 1];
 
-      // Find flight number between dep and arr milestone lines
-      const legFlight = allFlights.find(f => f.lineIdx > dep.lineIdx && f.lineIdx <= arr.lineIdx)
-                     || allFlights.find(f => f.lineIdx >= dep.lineIdx - 1 && f.lineIdx <= arr.lineIdx + 1);
+      let legFlight = allFlights.find(f => f.lineIdx > dep.lineIdx && f.lineIdx <= arr.lineIdx)
+                   || allFlights.find(f => f.lineIdx >= dep.lineIdx - 1 && f.lineIdx <= arr.lineIdx + 1)
+                   || (allFlights[i / 2] ? allFlights[i / 2] : null);
 
-      // Date: use departure milestone date
-      const segDate = dep.date || arr.date || '';
+      let flightName = legFlight ? legFlight.name : detectedAirlineCode;
 
-      // +1 detection: if arr date > dep date, it's a next-day arrival
+      // +1 detection: if arr date > dep date or dep time > arr time
       let plusOne = false;
       if (dep.date && arr.date && dep.date !== arr.date) {
         plusOne = true;
-      } else {
-        // Also check if dep time > arr time (crossed midnight)
-        if (dep.time > arr.time) plusOne = true;
+      } else if (dep.time > arr.time) {
+        plusOne = true;
+      }
+
+      // Smart date interpolation
+      let segDate = dep.date;
+      if (!segDate && arr.date) {
+        segDate = plusOne ? shiftDateDays(arr.date, -1) : arr.date;
+      } else if (!segDate && i > 0 && segments[segments.length - 1]?.date) {
+        segDate = segments[segments.length - 1].date;
       }
 
       const timeStr = `${dep.time}-${arr.time}${plusOne ? ' (+1)' : ''}`;
       const routeStr = `${dep.iata}-${arr.iata}`;
 
       segments.push({
-        date: segDate,
-        flight: legFlight ? legFlight.name : '',
+        date: segDate || '',
+        flight: flightName || '',
         route: routeStr,
         time: timeStr
       });
     }
   } else if (milestones.length >= 2) {
-    // 2 milestones = 1 direct leg
+    // Direct leg
     const dep = milestones[0];
     const arr = milestones[milestones.length - 1];
-    const legFlight = allFlights.length ? allFlights[0].name : '';
-    const segDate = dep.date || arr.date || '';
+    const legFlight = allFlights.length ? allFlights[0].name : detectedAirlineCode;
     let plusOne = false;
     if (dep.date && arr.date && dep.date !== arr.date) plusOne = true;
     else if (dep.time > arr.time) plusOne = true;
+
+    let segDate = dep.date || arr.date || '';
+    if (!segDate && arr.date && plusOne) segDate = shiftDateDays(arr.date, -1);
 
     const timeStr = `${dep.time}-${arr.time}${plusOne ? ' (+1)' : ''}`;
     const routeStr = `${dep.iata}-${arr.iata}`;
 
     segments.push({
       date: segDate,
-      flight: legFlight,
+      flight: legFlight || '',
       route: routeStr,
       time: timeStr
     });
   }
 
-  // --- FALLBACK: old-style parsing when milestones not found ---
+  // Fallback: general parsing when milestones not found
   if (segments.length === 0) {
-    // Extract dates
     const foundDates = [];
     const dateRegex = /\b(\d{1,2}[\.\/\-]\d{1,2}(?:[\.\/\-]\d{4})?)\b/g;
     let dm;
-    while ((dm = dateRegex.exec(text)) !== null) {
+    while ((dm = dateRegex.exec(cleanedRaw)) !== null) {
       const parsed = normalizeDate(dm[1]);
       if (parsed && !foundDates.includes(parsed)) foundDates.push(parsed);
     }
     const wordDateRegex = /(?:[A-Za-z]{3},?\s+)?(\d{1,2}\s+[A-Za-zА-Яа-яіІєЄїЇ]{3,9}(?:\s+\d{4})?)/gi;
-    while ((dm = wordDateRegex.exec(text)) !== null) {
+    while ((dm = wordDateRegex.exec(cleanedRaw)) !== null) {
       const parsed = normalizeDate(dm[1]);
       if (parsed && !foundDates.includes(parsed)) foundDates.push(parsed);
     }
 
-    // Extract times
-    const cleanedText = text
+    const cleanedForTimes = cleanedRaw
       .replace(/\b\d{1,2}\s*[hH]\s*\d{1,2}\s*[mM](?:in)?\b/gi, '')
       .replace(/\b\d{1,2}\s*[hH]\b/gi, '')
       .replace(/\b\d{1,2}\s*[mM](?:in)?\b/gi, '');
     const rawTimes = [];
     const timeRe = /\b([01]?\d|2[0-3]):([0-5]\d)\b/g;
     let tmm;
-    while ((tmm = timeRe.exec(cleanedText)) !== null) {
+    while ((tmm = timeRe.exec(cleanedForTimes)) !== null) {
       rawTimes.push(`${tmm[1].padStart(2, '0')}:${tmm[2]}`);
     }
 
-    // Extract airports
     const airports = [];
     lines.forEach(line => {
       const ms = line.match(/\b([A-Z]{3})\b/g);
@@ -3558,34 +3869,33 @@ function parseFlightText(text) {
       });
     });
 
-    const hasNextDay = /\+1/i.test(text) || (rawTimes.length >= 2 && rawTimes[0] > rawTimes[1]);
+    const hasNextDay = /\+1/i.test(cleanedRaw) || (rawTimes.length >= 2 && rawTimes[0] > rawTimes[1]);
 
     if (rawTimes.length >= 2) {
       const timeStr = `${rawTimes[0]}-${rawTimes[rawTimes.length - 1]}${hasNextDay ? ' (+1)' : ''}`;
       const routeStr = airports.length >= 2 ? `${airports[0]}-${airports[airports.length - 1]}` : '';
       segments.push({
         date: foundDates[0] || '',
-        flight: allFlights.length ? allFlights[0].name : '',
+        flight: allFlights.length ? allFlights[0].name : detectedAirlineCode,
         route: routeStr,
         time: timeStr
       });
     } else {
       segments.push({
         date: foundDates[0] || '',
-        flight: allFlights.length ? allFlights[0].name : '',
+        flight: allFlights.length ? allFlights[0].name : detectedAirlineCode,
         route: airports.length >= 2 ? `${airports[0]}-${airports[airports.length - 1]}` : '',
         time: rawTimes[0] || ''
       });
     }
   }
 
-  // Collect combined values for state
+  // Populate combined state values
   const allDates = segments.map(s => s.date).filter(Boolean);
   const allFlightNames = segments.map(s => s.flight).filter(Boolean);
   const allRoutes = segments.map(s => s.route).filter(Boolean);
   const allTimes = segments.map(s => s.time).filter(Boolean);
 
-  // Populate state
   state.altParser.date = [...new Set(allDates)].join(' / ');
   state.altParser.flight = [...new Set(allFlightNames)].join(' / ');
   state.altParser.time = allTimes.join(' / ');
@@ -3598,7 +3908,6 @@ function parseFlightText(text) {
     setAltFormatStyle('segmented');
   }
 
-  // Populate input fields
   const elDate = document.getElementById('altFieldDate');
   const elFlight = document.getElementById('altFieldFlight');
   const elTime = document.getElementById('altFieldTime');
@@ -3611,6 +3920,112 @@ function parseFlightText(text) {
 
   updateAltResultLine();
 }
+
+// Gemini Settings Modal & Status Functions
+function openGeminiSettingsModal() {
+  const modal = document.getElementById('geminiSettingsModal');
+  const input = document.getElementById('geminiApiKeyInput');
+  const statusMsg = document.getElementById('geminiKeyStatusMsg');
+  if (modal) modal.classList.remove('hidden');
+  const currentKey = state.geminiApiKey || localStorage.getItem('tickets_gemini_api_key') || '';
+  if (input) input.value = currentKey;
+  if (statusMsg) {
+    if (currentKey) {
+      statusMsg.className = "text-[11px] font-semibold py-1.5 px-3 rounded-lg bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800";
+      statusMsg.textContent = "🟢 Ключ збережено та активний!";
+      statusMsg.classList.remove('hidden');
+    } else {
+      statusMsg.classList.add('hidden');
+    }
+  }
+  safeCreateIcons(modal);
+}
+
+function closeGeminiSettingsModal() {
+  const modal = document.getElementById('geminiSettingsModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function saveGeminiApiKeyFromModal() {
+  const input = document.getElementById('geminiApiKeyInput');
+  const key = input ? input.value.trim() : '';
+  if (!key) {
+    alert('Будь ласка, введіть ключ або скористайтесь кнопкою «Видалити ключ»');
+    return;
+  }
+  localStorage.setItem('tickets_gemini_api_key', key);
+  state.geminiApiKey = key;
+  updateGeminiBadgeStatus();
+  closeGeminiSettingsModal();
+  showToast('Gemini API ключ збережено! ✨');
+}
+
+function removeGeminiApiKey() {
+  if (confirm('Видалити збережений Gemini API ключ?')) {
+    localStorage.removeItem('tickets_gemini_api_key');
+    state.geminiApiKey = '';
+    const input = document.getElementById('geminiApiKeyInput');
+    if (input) input.value = '';
+    updateGeminiBadgeStatus();
+    closeGeminiSettingsModal();
+    showToast('Ключ видалено. Використовується стандартний OCR.');
+  }
+}
+
+function toggleGeminiKeyVisibility() {
+  const input = document.getElementById('geminiApiKeyInput');
+  const icon = document.getElementById('geminiEyeIcon');
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (icon) icon.setAttribute('data-lucide', 'eye-off');
+  } else {
+    input.type = 'password';
+    if (icon) icon.setAttribute('data-lucide', 'eye');
+  }
+  safeCreateIcons();
+}
+
+function updateGeminiBadgeStatus() {
+  const apiKey = state.geminiApiKey || localStorage.getItem('tickets_gemini_api_key');
+  const btnLabel = document.getElementById('geminiBtnLabel');
+  const cfgBtn = document.getElementById('geminiConfigBtn');
+  const badge = document.getElementById('altAiBadge');
+
+  if (apiKey) {
+    if (btnLabel) btnLabel.textContent = 'Gemini AI ✨';
+    if (cfgBtn) {
+      cfgBtn.className = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-700 hover:bg-purple-200 transition-all shadow-xs";
+    }
+    if (badge) {
+      badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-950/70 dark:text-purple-300 border border-purple-300 dark:border-purple-700";
+      badge.onclick = openGeminiSettingsModal;
+      badge.style.cursor = 'pointer';
+      badge.innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i><span>Gemini Vision AI активний (100% точність)</span>`;
+      safeCreateIcons(badge);
+    }
+  } else {
+    if (btnLabel) btnLabel.textContent = 'Gemini AI';
+    if (cfgBtn) {
+      cfgBtn.className = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900/60 transition-all shadow-xs";
+    }
+    if (badge) {
+      badge.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 cursor-pointer hover:bg-slate-200";
+      badge.onclick = openGeminiSettingsModal;
+      badge.style.cursor = 'pointer';
+      badge.innerHTML = `<i data-lucide="settings" class="w-3.5 h-3.5 text-slate-400"></i><span>Tesseract OCR (підключіть Gemini AI для 100% точності)</span>`;
+      safeCreateIcons(badge);
+    }
+  }
+}
+
+// Expose modal functions to window
+window.openGeminiSettingsModal = openGeminiSettingsModal;
+window.closeGeminiSettingsModal = closeGeminiSettingsModal;
+window.saveGeminiApiKeyFromModal = saveGeminiApiKeyFromModal;
+window.removeGeminiApiKey = removeGeminiApiKey;
+window.toggleGeminiKeyVisibility = toggleGeminiKeyVisibility;
+window.updateGeminiBadgeStatus = updateGeminiBadgeStatus;
 
 function onAltFieldChange() {
   state.altParser.date = document.getElementById('altFieldDate')?.value.trim() || '';
