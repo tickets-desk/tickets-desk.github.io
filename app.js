@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Tickets UA Support Agent Dashboard
  * Core Application Logic
  */
@@ -1975,39 +1975,91 @@ function onTextareaEdit(val) {
   updateUnfilledWarningState();
 }
 
-// Live Translation Engine: UA -> EN with placeholder token protection
+// Live Translation Engine: UA -> EN with Google Neural AI & MyMemory fallback
 let translateDebounceTimer = null;
+let modalTranslateDebounceTimer = null;
 
 async function translateTextUaToEn(text) {
   if (!text || !text.trim()) return '';
-  
-  // Protect placeholders like [PNR], [FLIGHT], [OLD_ORDER_ID]
+
+  const trimmed = text.trim();
+  const placeholders = trimmed.match(/\[([A-Z0-9_]+)\]/g) || [];
+
+  // Protect placeholders with tokens so the translator never splits or mistranslates words inside them
   const placeholderTokens = [];
-  const protectedText = text.replace(/\[([A-Z0-9_]+)\]/g, (match) => {
+  const protectedText = trimmed.replace(/\[([A-Z0-9_]+)\]/g, (match) => {
     const token = `__PH${placeholderTokens.length}__`;
     placeholderTokens.push(match);
     return token;
   });
 
+  // Helper to restore placeholders
+  const restorePlaceholders = (str) => {
+    let res = str;
+    placeholderTokens.forEach((tokenVal, idx) => {
+      const reg = new RegExp(`__PH${idx}__`, 'gi');
+      res = res.replace(reg, tokenVal);
+    });
+    // Also catch any raw placeholders if the translator kept them
+    placeholders.forEach(ph => {
+      const inner = ph.replace(/[\[\]]/g, '');
+      const reg = new RegExp(`\\[\\s*${inner}\\s*\\]`, 'gi');
+      res = res.replace(reg, ph);
+    });
+    return res;
+  };
+
+  // Engine 1: Google Translate API (clients5 dict-chrome-ex: highest translation quality, fast, open CORS)
+  try {
+    const url = `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=uk&tl=en&q=${encodeURIComponent(protectedText)}`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      let translated = '';
+      if (Array.isArray(data)) {
+        translated = data.map(item => Array.isArray(item) ? item.join('') : String(item)).join('');
+      } else if (typeof data === 'string') {
+        translated = data;
+      }
+      if (translated && translated.trim()) {
+        return restorePlaceholders(translated.trim());
+      }
+    }
+  } catch (err) {
+    console.warn('Google Translate API failed, trying fallback:', err);
+  }
+
+  // Engine 2: Google Translate GTX endpoint (secondary Google engine)
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=uk&tl=en&dt=t&q=${encodeURIComponent(protectedText)}`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data[0] && Array.isArray(data[0])) {
+        const translated = data[0].map(s => s[0]).join('');
+        if (translated && translated.trim()) {
+          return restorePlaceholders(translated.trim());
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Google GTX fallback failed:', err);
+  }
+
+  // Engine 3: MyMemory API (tertiary fallback)
   try {
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(protectedText)}&langpair=uk|en`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error('Translation HTTP error');
-    const data = await res.json();
-    
-    if (data && data.responseData && data.responseData.translatedText) {
-      let result = data.responseData.translatedText;
-      // Restore placeholder tokens
-      placeholderTokens.forEach((tokenVal, idx) => {
-        const regex = new RegExp(`__PH${idx}__`, 'gi');
-        result = result.replace(regex, tokenVal);
-      });
-      return result;
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.responseData && data.responseData.translatedText) {
+        return restorePlaceholders(data.responseData.translatedText.trim());
+      }
     }
   } catch (err) {
-    console.warn('Live translation failed, using original:', err);
-    throw err;
+    console.warn('MyMemory fallback failed:', err);
   }
+
   return text;
 }
 
@@ -2072,6 +2124,43 @@ async function manualTranslateUaToEn() {
   } catch (err) {
     showToast('Не вдалося виконати переклад');
   }
+}
+
+// Live Auto-Translation Handler for Modals (Add & Edit)
+function onModalUaInput(val, mode) {
+  const isNew = mode === 'new';
+  const statusEl = document.getElementById(isNew ? 'addModalTranslateStatus' : 'editModalTranslateStatus');
+  const enInput = document.getElementById(isNew ? 'newTplTextEn' : 'editTplTextEn');
+
+  if (!val || !val.trim()) {
+    if (statusEl) statusEl.innerHTML = '';
+    return;
+  }
+
+  if (statusEl) {
+    statusEl.innerHTML = `<span class="inline-flex items-center gap-1 text-amber-500 font-medium"><i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Перекладається...</span>`;
+    safeCreateIcons(statusEl);
+  }
+
+  clearTimeout(modalTranslateDebounceTimer);
+  modalTranslateDebounceTimer = setTimeout(async () => {
+    try {
+      const translated = await translateTextUaToEn(val);
+      if (translated && enInput) {
+        enInput.value = translated;
+      }
+      if (statusEl) {
+        statusEl.innerHTML = `<span class="inline-flex items-center gap-1 text-emerald-500 font-semibold"><i data-lucide="check" class="w-3 h-3"></i> Перекладено</span>`;
+        safeCreateIcons(statusEl);
+        setTimeout(() => { if (statusEl) statusEl.innerHTML = ''; }, 2500);
+      }
+    } catch (err) {
+      if (statusEl) {
+        statusEl.innerHTML = `<span class="text-rose-500 text-[11px]">Помилка автоперекладу</span>`;
+        setTimeout(() => { if (statusEl) statusEl.innerHTML = ''; }, 3000);
+      }
+    }
+  }, 600);
 }
 
 function getUnfilledPlaceholders(text) {
@@ -2321,6 +2410,8 @@ function openAddTemplateModal() {
   document.getElementById('newTplTitleUa').value = '';
   document.getElementById('newTplTextUa').value = '';
   document.getElementById('newTplTextEn').value = '';
+  const statusEl = document.getElementById('addModalTranslateStatus');
+  if (statusEl) statusEl.innerHTML = '';
 
   modal.classList.remove('hidden');
   safeCreateIcons(modal);
@@ -2396,14 +2487,28 @@ async function autoTranslateAddModal() {
     showToast('Спочатку введіть текст українською');
     return;
   }
+  const statusEl = document.getElementById('addModalTranslateStatus');
+  if (statusEl) {
+    statusEl.innerHTML = `<span class="inline-flex items-center gap-1 text-amber-500 font-medium"><i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Перекладається...</span>`;
+    safeCreateIcons(statusEl);
+  }
   showToast('Перекладаємо на англійську...');
   try {
     const en = await translateTextUaToEn(ua);
     const enInput = document.getElementById('newTplTextEn');
     if (enInput) enInput.value = en;
     showToast('Переклад завершено!');
+    if (statusEl) {
+      statusEl.innerHTML = `<span class="inline-flex items-center gap-1 text-emerald-500 font-semibold"><i data-lucide="check" class="w-3 h-3"></i> Перекладено</span>`;
+      safeCreateIcons(statusEl);
+      setTimeout(() => { if (statusEl) statusEl.innerHTML = ''; }, 2500);
+    }
   } catch (e) {
     showToast('Помилка перекладу');
+    if (statusEl) {
+      statusEl.innerHTML = `<span class="text-rose-500 text-[11px]">Помилка</span>`;
+      setTimeout(() => { if (statusEl) statusEl.innerHTML = ''; }, 2500);
+    }
   }
 }
 
@@ -2422,6 +2527,8 @@ function openEditTemplateModal(id) {
   document.getElementById('editTplTitleUa').value = t.titleUa || '';
   document.getElementById('editTplTextUa').value = t.templateUa || t.titleUa || '';
   document.getElementById('editTplTextEn').value = t.templateEn || '';
+  const statusEl = document.getElementById('editModalTranslateStatus');
+  if (statusEl) statusEl.innerHTML = '';
 
   modal.classList.remove('hidden');
   safeCreateIcons(modal);
@@ -2528,14 +2635,28 @@ async function autoTranslateEditModal() {
     showToast('Спочатку введіть текст українською');
     return;
   }
+  const statusEl = document.getElementById('editModalTranslateStatus');
+  if (statusEl) {
+    statusEl.innerHTML = `<span class="inline-flex items-center gap-1 text-amber-500 font-medium"><i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Перекладається...</span>`;
+    safeCreateIcons(statusEl);
+  }
   showToast('Перекладаємо на англійську...');
   try {
     const en = await translateTextUaToEn(ua);
     const enInput = document.getElementById('editTplTextEn');
     if (enInput) enInput.value = en;
     showToast('Переклад завершено!');
+    if (statusEl) {
+      statusEl.innerHTML = `<span class="inline-flex items-center gap-1 text-emerald-500 font-semibold"><i data-lucide="check" class="w-3 h-3"></i> Перекладено</span>`;
+      safeCreateIcons(statusEl);
+      setTimeout(() => { if (statusEl) statusEl.innerHTML = ''; }, 2500);
+    }
   } catch (e) {
     showToast('Помилка перекладу');
+    if (statusEl) {
+      statusEl.innerHTML = `<span class="text-rose-500 text-[11px]">Помилка</span>`;
+      setTimeout(() => { if (statusEl) statusEl.innerHTML = ''; }, 2500);
+    }
   }
 }
 
@@ -2629,6 +2750,7 @@ window.closeEditTemplateModal = closeEditTemplateModal;
 window.handleSaveEditedTemplate = handleSaveEditedTemplate;
 window.handleDeleteTemplateFromModal = handleDeleteTemplateFromModal;
 window.autoTranslateEditModal = autoTranslateEditModal;
+window.onModalUaInput = onModalUaInput;
 window.toggleFavoriteTemplate = toggleFavoriteTemplate;
 window.toggleShowOnlyFavoriteTemplates = toggleShowOnlyFavoriteTemplates;
 
