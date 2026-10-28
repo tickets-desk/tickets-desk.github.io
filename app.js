@@ -259,7 +259,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "pnr-verify",
     target: "partners",
-    trigger: "::pnr",
+    trigger: "::1",
     category: "PNR & Перевірка",
     titleUa: "Перевірка коректності PNR",
     descriptionUa: "Запит партнеру щодо правильності номера PNR для бронювання.",
@@ -270,7 +270,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "alt-refund",
     target: "partners",
-    trigger: "::ref",
+    trigger: "::2",
     category: "Повернення & Зміни",
     titleUa: "Альтернатива не підходить / Повне повернення",
     descriptionUa: "Пасажир відхиляє запропоновану альтернативу, запит на повне повернення коштів.",
@@ -281,7 +281,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "wrong-date-issued",
     target: "partners",
-    trigger: "::dat",
+    trigger: "::3",
     category: "Помилки & Виписка",
     titleUa: "Квиток оформлено не на ту дату",
     descriptionUa: "Повідомлення про помилку у виписаній даті квитка із зазначенням правильної.",
@@ -292,7 +292,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "denied-boarding",
     target: "partners",
-    trigger: "::den",
+    trigger: "::4",
     category: "Терміново / Проблеми",
     titleUa: "Пасажира не пустили на борт (Терміново)",
     descriptionUa: "Термінова перевірка інформації про відмову в посадці пасажиру.",
@@ -303,7 +303,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "bt-pnr",
     target: "partners",
-    trigger: "::btp",
+    trigger: "::5",
     category: "Реєстрація & Доступ",
     titleUa: "Надати BT PNR для реєстрації",
     descriptionUa: "Запит номера PNR авіакомпанії airBaltic (BT) для проходження чекіну.",
@@ -314,7 +314,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "suspend-issuance",
     target: "partners",
-    trigger: "::stp",
+    trigger: "::6",
     category: "Терміново / Проблеми",
     titleUa: "Призупинити видачу квитків (Терміново)",
     descriptionUa: "Негайна вимога зупинити виписку квитка в черзі.",
@@ -325,7 +325,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "access-credentials",
     target: "partners",
-    trigger: "::eml",
+    trigger: "::7",
     category: "Реєстрація & Доступ",
     titleUa: "Email та телефон для доступу до бронювання",
     descriptionUa: "Запит контактних даних агента, використаних під час створення замовлення.",
@@ -336,7 +336,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "wait-moment",
     target: "partners",
-    trigger: "::wai",
+    trigger: "::8",
     category: "Комунікація",
     titleUa: "Зачекайте, перевіряємо у пасажира",
     descriptionUa: "Стандартна пауза для узгодження деталей з клієнтом.",
@@ -347,7 +347,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "booking-cancelled-web",
     target: "partners",
-    trigger: "::ccl",
+    trigger: "::9",
     category: "Терміново / Проблеми",
     titleUa: "Бронювання скасоване на сайті АК",
     descriptionUa: "Запит перевірки, чому бронювання відображається скасованим на сайті авіакомпанії.",
@@ -358,7 +358,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "tickets-inactive",
     target: "partners",
-    trigger: "::ina",
+    trigger: "::10",
     category: "Терміново / Проблеми",
     titleUa: "Квитки неактивні (Терміново)",
     descriptionUa: "Терміновий запит щодо неактивного статусу електронних квитків пасажира.",
@@ -369,7 +369,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "wrong-date-rectify",
     target: "partners",
-    trigger: "::wdt",
+    trigger: "::11",
     category: "Помилки & Виписка",
     titleUa: "Квитки виписані не на ту дату (Виправлення)",
     descriptionUa: "Запит на термінове виправлення дати виписаного квитка відповідно до наданих даних.",
@@ -380,7 +380,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "pnr-photo-confirm",
     target: "partners",
-    trigger: "::pic",
+    trigger: "::12",
     category: "PNR & Перевірка",
     titleUa: "Скріншот / Фотопідтвердження PNR",
     descriptionUa: "Запит скріншота з системи бронювання про те, що з PNR все добре.",
@@ -391,7 +391,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "ryanair-fr-email",
     target: "partners",
-    trigger: "::frm",
+    trigger: "::13",
     category: "Реєстрація & Доступ",
     titleUa: "Пошта для реєстрації на сайті Ryanair (FR)",
     descriptionUa: "Запит адреси електронної пошти консолідатора для чекіну на Ryanair.",
@@ -402,7 +402,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "bag-15kg",
     target: "partners",
-    trigger: "::15k",
+    trigger: "::14",
     category: "Багаж",
     titleUa: "Додати 15 кг багажу + ціна",
     descriptionUa: "Запит вартості та можливості додати 15 кг зареєстрованого багажу.",
@@ -413,7 +413,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "bag-20kg",
     target: "partners",
-    trigger: "::20k",
+    trigger: "::15",
     category: "Багаж",
     titleUa: "Додати 20 кг багажу + ціна",
     descriptionUa: "Запит вартості та можливості додати 20 кг зареєстрованого багажу.",
@@ -424,7 +424,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "bag-25kg",
     target: "partners",
-    trigger: "::25k",
+    trigger: "::16",
     category: "Багаж",
     titleUa: "Додати 25 кг багажу + ціна",
     descriptionUa: "Запит вартості та можливості додати 25 кг зареєстрованого багажу.",
@@ -435,7 +435,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "bag-10kg-chk",
     target: "partners",
-    trigger: "::10k",
+    trigger: "::17",
     category: "Багаж",
     titleUa: "Додати 10 кг багажу + ціна",
     descriptionUa: "Запит вартості та можливості додати 10 кг зареєстрованого багажу.",
@@ -446,7 +446,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "cabin-bag-8-10",
     target: "partners",
-    trigger: "::cab",
+    trigger: "::18",
     category: "Багаж",
     titleUa: "Додати 8–10 кг ручної поклажі + ціна",
     descriptionUa: "Запит додавання великої ручної поклажі (carry-on / priority).",
@@ -457,7 +457,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "seat-xl",
     target: "partners",
-    trigger: "::sxl",
+    trigger: "::19",
     category: "Місця & Послуги",
     titleUa: "Додати місце XL (Extra Legroom) + ціна",
     descriptionUa: "Запит вартості та вибору місця з додатковим простором для ніг.",
@@ -468,7 +468,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "seat-specific",
     target: "partners",
-    trigger: "::set",
+    trigger: "::20",
     category: "Місця & Послуги",
     titleUa: "Додати конкретне місце + ціна",
     descriptionUa: "Запит закріплення певного номеру місця в салоні за пасажиром.",
@@ -479,7 +479,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "meal-add",
     target: "partners",
-    trigger: "::mel",
+    trigger: "::21",
     category: "Місця & Послуги",
     titleUa: "Додати харчування + ціна",
     descriptionUa: "Запит спеціального або стандартного харчування на рейсі.",
@@ -490,7 +490,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "universal-request",
     target: "partners",
-    trigger: "::req",
+    trigger: "::22",
     category: "Комунікація",
     titleUa: "Універсальний початок запиту",
     descriptionUa: "Гнучкий шаблон для оформлення довільного запиту партнерам з номером PNR.",
@@ -501,7 +501,7 @@ const DEFAULT_TEMPLATES = [
   {
     id: "pk-fire-bg",
     target: "partners",
-    trigger: "::pkf",
+    trigger: "::23",
     category: "Фінанси / PK FIRE",
     titleUa: "PK FIRE BG — оновлення суми до оплати",
     descriptionUa: "Запит на зміну суми до оплати в системі PK FIRE між старим і новим замовленням.",
@@ -510,6 +510,54 @@ const DEFAULT_TEMPLATES = [
     placeholders: ["OLD_ORDER_ID", "NEW_ORDER_ID"]
   }
 ];
+
+function getNextTemplateTriggerNumber(list = state?.templates) {
+  let maxNum = 0;
+  const arr = list && list.length ? list : DEFAULT_TEMPLATES;
+  arr.forEach(t => {
+    const match = (t.trigger || '').match(/^::(\d+)$/);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (!isNaN(num) && num > maxNum) {
+        maxNum = num;
+      }
+    }
+  });
+  if (maxNum === 0) {
+    maxNum = arr.length;
+  }
+  return maxNum + 1;
+}
+
+function migrateTemplateTriggers(templatesList) {
+  if (!Array.isArray(templatesList)) return { changed: false, migratedTemplates: templatesList };
+  const defaultMap = {};
+  DEFAULT_TEMPLATES.forEach(dt => { defaultMap[dt.id] = dt.trigger; });
+  let changed = false;
+  let maxNum = 0;
+
+  templatesList.forEach(t => {
+    if (defaultMap[t.id] && t.trigger !== defaultMap[t.id]) {
+      t.trigger = defaultMap[t.id];
+      changed = true;
+    }
+    const match = (t.trigger || '').match(/^::(\d+)$/);
+    if (match) {
+      const n = parseInt(match[1], 10);
+      if (!isNaN(n) && n > maxNum) maxNum = n;
+    }
+  });
+
+  templatesList.forEach(t => {
+    if (!t.trigger || !t.trigger.match(/^::\d+$/)) {
+      maxNum++;
+      t.trigger = `::${maxNum}`;
+      changed = true;
+    }
+  });
+
+  return { changed, migratedTemplates: templatesList };
+}
 
 // Safe Lucide icon renderer with optional scoping for high performance
 function safeCreateIcons(rootElement) {
@@ -687,8 +735,12 @@ function initFirebaseSync() {
         const remoteTemplates = [];
         snapshot.forEach(doc => remoteTemplates.push(doc.data()));
         if (remoteTemplates.length > 0) {
-          state.templates = remoteTemplates;
+          const { changed, migratedTemplates } = migrateTemplateTriggers(remoteTemplates);
+          state.templates = migratedTemplates;
           localStorage.setItem('tickets_ua_custom_templates', JSON.stringify(state.templates));
+          if (changed && firestoreDb) {
+            seedTemplatesToFirestore();
+          }
           updateHeaderCounters();
           updateTargetTabButtons();
           renderCategoryPills();
@@ -857,7 +909,9 @@ async function loadData() {
     }
   }
 
-  state.templates = loadedTemplates;
+  // Ensure triggers are numeric ::1, ::2, etc.
+  const { migratedTemplates } = migrateTemplateTriggers(loadedTemplates);
+  state.templates = migratedTemplates;
   try {
     localStorage.setItem('tickets_ua_custom_templates', JSON.stringify(state.templates));
   } catch (e) {}
@@ -1767,6 +1821,7 @@ function renderSelectedTemplateWorkspace() {
 
   const t = state.selectedTemplate;
   const placeholders = t.placeholders || [];
+  const isCallCenter = (t.target === 'callcenter');
 
   const rawEn = t.templateEn || '';
   const rawUa = t.templateUa || t.titleUa || '';
@@ -1800,6 +1855,14 @@ function renderSelectedTemplateWorkspace() {
         </div>
 
         <div class="flex items-center gap-2">
+          ${!isCallCenter ? `
+            <button onclick="openAiSettingsModal()"
+                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors shadow-2xs"
+                    title="ШІ-переклад авіаційною англійською (Gemini API)">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
+              <span>ШІ-переклад</span>
+            </button>
+          ` : ''}
           <button onclick="openEditTemplateModal('${t.id}')"
                   class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-amber-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors shadow-2xs">
             <i data-lucide="edit-3" class="w-3.5 h-3.5 text-amber-500"></i>
@@ -1843,81 +1906,128 @@ function renderSelectedTemplateWorkspace() {
       </div>
     ` : ''}
 
-    <!-- Dual Textarea Section: Ukrainian & English with Live Translation -->
-    <div class="p-5 flex-1 flex flex-col space-y-4">
-      
-      <!-- Ukrainian Box (Editable & Translatable) -->
-      <div class="flex flex-col">
-        <div class="flex items-center justify-between mb-1.5">
-          <label for="templateUaEditArea" class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
-            <span>🇺🇦 Текст українською</span>
-            <span class="text-[10px] lowercase font-normal text-slate-400">(можна змінювати — перекладається на EN)</span>
-          </label>
+    ${isCallCenter ? `
+      <!-- Single Textarea Section for Call Center: Ukrainian Only -->
+      <div class="p-5 flex-1 flex flex-col space-y-4">
+        <div class="flex flex-col flex-1">
+          <div class="flex items-center justify-between mb-1.5">
+            <label for="templateOutputArea" class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <span>🇺🇦 Скрипт для оператора КЦ (Українська)</span>
+              <span class="text-[10px] lowercase font-normal text-slate-400">(для спілкування з клієнтом)</span>
+            </label>
+            <span id="charCount" class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+              ${displayUa.length} симв.
+            </span>
+          </div>
+          <textarea id="templateOutputArea"
+                    rows="6"
+                    oninput="onUaTextareaEdit(this.value)"
+                    placeholder="Введіть або відредагуйте текст скрипта для пасажира..."
+                    class="w-full p-3.5 rounded-xl text-sm font-sans leading-relaxed bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all shadow-inner resize-y font-medium">${escapeHtml(displayUa)}</textarea>
+        </div>
+
+        <!-- Unfilled Placeholder Warning Banner (Shows dynamically) -->
+        <div id="unfilledWarningBanner" class="hidden p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-200 flex items-start gap-2 text-xs">
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5"></i>
+          <div class="flex-1">
+            <strong class="font-bold">Увага!</strong> <span id="unfilledWarningText">У тексті залишились незаповнені плейсхолдери.</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons Footer -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 mt-auto">
+          <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <i data-lucide="info" class="w-4 h-4 text-sky-500 stroke-[2]"></i>
+            <span>Комбінація <strong>Ctrl + Enter</strong> для швидкого копіювання</span>
+          </div>
+
           <div class="flex items-center gap-2">
-            <span id="translationStatus" class="text-[11px]"></span>
-            <button onclick="manualTranslateUaToEn()" 
-                    title="Перекласти поточний український текст на англійську"
-                    class="flex items-center gap-1 text-[11px] font-bold text-sky-600 hover:text-sky-500 dark:text-sky-400 hover:underline">
-              <i data-lucide="languages" class="w-3.5 h-3.5"></i>
-              <span>⚡ Оновити EN</span>
-            </button>
-            <button onclick="copyScriptUaToClipboard()" 
-                    title="Скопіювати український варіант"
-                    class="text-[11px] text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 flex items-center gap-1">
-              <i data-lucide="copy" class="w-3 h-3"></i>
-              <span>Копіювати UA</span>
+            <button id="copyScriptBtn" 
+                    onclick="copyScriptToClipboard()"
+                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white shadow-sm hover:shadow-md transition-all active:scale-[0.98]">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+              <span id="copyBtnText">Скопіювати скрипт</span>
             </button>
           </div>
         </div>
-        <textarea id="templateUaEditArea"
-                  rows="3"
-                  oninput="onUaTextareaEdit(this.value)"
-                  placeholder="Введіть текст звернення українською..."
-                  class="w-full p-3 rounded-xl text-xs font-sans leading-relaxed bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all resize-y">${escapeHtml(displayUa)}</textarea>
       </div>
-
-      <!-- English Box (Final sendable message) -->
-      <div class="flex flex-col flex-1">
-        <div class="flex items-center justify-between mb-1.5">
-          <label for="templateOutputArea" class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
-            <span>🇬🇧 Готовий текст англійською (для партнера)</span>
-          </label>
-          <span id="charCount" class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-            ${displayEn.length} симв.
-          </span>
-        </div>
-        <textarea id="templateOutputArea"
-                  rows="4"
-                  oninput="onTextareaEdit(this.value)"
-                  class="w-full p-3.5 rounded-xl text-sm font-sans leading-relaxed bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all shadow-inner resize-y font-medium">${escapeHtml(displayEn)}</textarea>
-      </div>
-
-      <!-- Unfilled Placeholder Warning Banner (Shows dynamically) -->
-      <div id="unfilledWarningBanner" class="hidden p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-200 flex items-start gap-2 text-xs">
-        <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5"></i>
-        <div class="flex-1">
-          <strong class="font-bold">Увага!</strong> <span id="unfilledWarningText">У тексті залишились незаповнені плейсхолдери.</span>
-        </div>
-      </div>
-
-      <!-- Action Buttons Footer -->
-      <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 mt-auto">
-        <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-          <i data-lucide="info" class="w-4 h-4 text-sky-500 stroke-[2]"></i>
-          <span>Комбінація <strong>Ctrl + Enter</strong> для швидкого копіювання</span>
+    ` : `
+      <!-- Dual Textarea Section: Ukrainian & English with Live Translation -->
+      <div class="p-5 flex-1 flex flex-col space-y-4">
+        
+        <!-- Ukrainian Box (Editable & Translatable) -->
+        <div class="flex flex-col">
+          <div class="flex items-center justify-between mb-1.5">
+            <label for="templateUaEditArea" class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <span>🇺🇦 Текст українською</span>
+              <span class="text-[10px] lowercase font-normal text-slate-400">(можна змінювати — перекладається на EN)</span>
+            </label>
+            <div class="flex items-center gap-2">
+              <span id="translationStatus" class="text-[11px]"></span>
+              <button onclick="manualTranslateUaToEn()" 
+                      title="Перекласти поточний український текст на англійську за допомогою ШІ або словника"
+                      class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white shadow-xs transition-all">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                <span>⚡ ШІ-переклад на EN</span>
+              </button>
+              <button onclick="copyScriptUaToClipboard()" 
+                      title="Скопіювати український варіант"
+                      class="text-[11px] text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 flex items-center gap-1">
+                <i data-lucide="copy" class="w-3 h-3"></i>
+                <span>Копіювати UA</span>
+              </button>
+            </div>
+          </div>
+          <textarea id="templateUaEditArea"
+                    rows="3"
+                    oninput="onUaTextareaEdit(this.value)"
+                    placeholder="Введіть текст звернення українською..."
+                    class="w-full p-3 rounded-xl text-xs font-sans leading-relaxed bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all resize-y">${escapeHtml(displayUa)}</textarea>
         </div>
 
-        <div class="flex items-center gap-2">
-          <button id="copyScriptBtn" 
-                  onclick="copyScriptToClipboard()"
-                  class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white shadow-sm hover:shadow-md transition-all active:scale-[0.98]">
-            <i data-lucide="copy" class="w-4 h-4"></i>
-            <span id="copyBtnText">Скопіювати у буфер (EN)</span>
-          </button>
+        <!-- English Box (Final sendable message) -->
+        <div class="flex flex-col flex-1">
+          <div class="flex items-center justify-between mb-1.5">
+            <label for="templateOutputArea" class="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <span>🇬🇧 Готовий текст англійською (для партнера)</span>
+            </label>
+            <span id="charCount" class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+              ${displayEn.length} симв.
+            </span>
+          </div>
+          <textarea id="templateOutputArea"
+                    rows="4"
+                    oninput="onTextareaEdit(this.value)"
+                    class="w-full p-3.5 rounded-xl text-sm font-sans leading-relaxed bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all shadow-inner resize-y font-medium">${escapeHtml(displayEn)}</textarea>
         </div>
-      </div>
 
-    </div>
+        <!-- Unfilled Placeholder Warning Banner (Shows dynamically) -->
+        <div id="unfilledWarningBanner" class="hidden p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-200 flex items-start gap-2 text-xs">
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5"></i>
+          <div class="flex-1">
+            <strong class="font-bold">Увага!</strong> <span id="unfilledWarningText">У тексті залишились незаповнені плейсхолдери.</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons Footer -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 mt-auto">
+          <div class="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+            <i data-lucide="info" class="w-4 h-4 text-sky-500 stroke-[2]"></i>
+            <span>Комбінація <strong>Ctrl + Enter</strong> для швидкого копіювання</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="copyScriptBtn" 
+                    onclick="copyScriptToClipboard()"
+                    class="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white shadow-sm hover:shadow-md transition-all active:scale-[0.98]">
+              <i data-lucide="copy" class="w-4 h-4"></i>
+              <span id="copyBtnText">Скопіювати у буфер (EN)</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    `}
   `;
 
   safeCreateIcons(container);
@@ -2135,6 +2245,16 @@ Return ONLY the final translated English text without quotes, introductory remar
 
 function onUaTextareaEdit(val) {
   state.customEditedUaText = val;
+  const isCC = state.selectedTemplate?.target === 'callcenter';
+  const charCount = document.getElementById('charCount');
+  if (charCount) charCount.textContent = `${val.length} симв.`;
+  updateUnfilledWarningState();
+
+  if (isCC) {
+    // Call center scripts are Ukrainian-only, no EN translation needed
+    return;
+  }
+
   const statusEl = document.getElementById('translationStatus');
   if (statusEl) {
     statusEl.innerHTML = `<span class="inline-flex items-center gap-1 text-amber-500 font-semibold"><i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Перекладається...</span>`;
@@ -2149,8 +2269,8 @@ function onUaTextareaEdit(val) {
         state.customEditedText = translated;
         const enTextarea = document.getElementById('templateOutputArea');
         if (enTextarea) enTextarea.value = translated;
-        const charCount = document.getElementById('charCount');
-        if (charCount) charCount.textContent = `${translated.length} симв.`;
+        const countEl = document.getElementById('charCount');
+        if (countEl) countEl.textContent = `${translated.length} симв.`;
         updateUnfilledWarningState();
       }
       if (statusEl) {
@@ -2205,6 +2325,11 @@ async function manualTranslateUaToEn() {
 // Live Auto-Translation Handler for Modals (Add & Edit)
 function onModalUaInput(val, mode) {
   const isNew = mode === 'new';
+  const targetVal = document.getElementById(isNew ? 'newTplTarget' : 'editTplTarget')?.value || 'partners';
+  if (targetVal === 'callcenter') {
+    // Call center scripts do not translate to English
+    return;
+  }
   const statusEl = document.getElementById(isNew ? 'addModalTranslateStatus' : 'editModalTranslateStatus');
   const enInput = document.getElementById(isNew ? 'newTplTextEn' : 'editTplTextEn');
 
@@ -2467,6 +2592,8 @@ function updateUnfilledWarningState() {
 
   const text = textarea.value;
   const unfilled = getUnfilledPlaceholders(text);
+  const isCC = state.selectedTemplate?.target === 'callcenter';
+  const defaultBtnText = isCC ? "Скопіювати скрипт" : "Скопіювати у буфер (EN)";
 
   if (unfilled.length > 0) {
     btn.className = "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-amber-500 hover:bg-amber-600 text-white shadow-sm ring-2 ring-amber-300 dark:ring-amber-800 transition-all active:scale-[0.98]";
@@ -2478,11 +2605,13 @@ function updateUnfilledWarningState() {
     }
     if (warningBanner && warningText) {
       warningBanner.classList.remove('hidden');
-      warningText.textContent = `Увага: у тексті залишились незаповнені плейсхолдери: ${unfilled.join(', ')}. Рекомендується заповнити їх перед відправкою партнеру!`;
+      warningText.textContent = isCC
+        ? `Увага: у тексті залишились незаповнені плейсхолдери: ${unfilled.join(', ')}. Заповніть їх перед копіюванням!`
+        : `Увага: у тексті залишились незаповнені плейсхолдери: ${unfilled.join(', ')}. Рекомендується заповнити їх перед відправкою партнеру!`;
     }
   } else {
     btn.className = "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white shadow-sm hover:shadow-md transition-all active:scale-[0.98]";
-    btnText.textContent = "Скопіювати у буфер (EN)";
+    btnText.textContent = defaultBtnText;
     const icon = btn.querySelector('[data-lucide]');
     if (icon) {
       icon.setAttribute('data-lucide', 'copy');
@@ -2508,6 +2637,7 @@ function copyScriptToClipboard() {
 
   const textToCopy = textarea.value;
   const unfilled = getUnfilledPlaceholders(textToCopy);
+  const isCC = state.selectedTemplate?.target === 'callcenter';
 
   navigator.clipboard.writeText(textToCopy).then(() => {
     const btn = document.getElementById('copyScriptBtn');
@@ -2515,7 +2645,7 @@ function copyScriptToClipboard() {
 
     if (btn && btnText) {
       btn.className = "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md transition-all copy-pulse";
-      btnText.textContent = "Copied to Clipboard!";
+      btnText.textContent = isCC ? "Скрипт скопійовано!" : "Copied to Clipboard!";
       const icon = btn.querySelector('[data-lucide]');
       if (icon) {
         icon.setAttribute('data-lucide', 'check');
@@ -2530,7 +2660,7 @@ function copyScriptToClipboard() {
     if (unfilled.length > 0) {
       showToast(`⚠️ Скопійовано з незаповненими полями: ${unfilled.join(', ')}`);
     } else {
-      showToast('Англійський скрипт скопійовано у буфер!');
+      showToast(isCC ? 'Скрипт скопійовано у буфер!' : 'Англійський скрипт скопійовано у буфер!');
     }
   }).catch(() => {
     showToast('Помилка копіювання');
@@ -2685,6 +2815,34 @@ function initPlaceholderEvents() {
 }
 
 // Add Template Modal functions
+function onTemplateTargetChange(mode) {
+  const isNew = mode === 'new';
+  const targetVal = document.getElementById(isNew ? 'newTplTarget' : 'editTplTarget')?.value || 'partners';
+  const isCC = targetVal === 'callcenter';
+
+  const enSection = document.getElementById(isNew ? 'newTplEnSection' : 'editTplEnSection');
+  const enInput = document.getElementById(isNew ? 'newTplTextEn' : 'editTplTextEn');
+  const translateBtnSection = document.getElementById(isNew ? 'newTplTranslateBtnSection' : 'editTplTranslateBtnSection');
+
+  if (enSection) {
+    if (isCC) {
+      enSection.classList.add('hidden');
+      if (enInput) enInput.required = false;
+    } else {
+      enSection.classList.remove('hidden');
+      if (enInput) enInput.required = true;
+    }
+  }
+  if (translateBtnSection) {
+    if (isCC) {
+      translateBtnSection.classList.add('hidden');
+    } else {
+      translateBtnSection.classList.remove('hidden');
+    }
+  }
+}
+window.onTemplateTargetChange = onTemplateTargetChange;
+
 function openAddTemplateModal() {
   const modal = document.getElementById('addTemplateModal');
   if (!modal) return;
@@ -2692,13 +2850,19 @@ function openAddTemplateModal() {
   const targetSelect = document.getElementById('newTplTarget');
   if (targetSelect) targetSelect.value = state.templateTargetTab || 'partners';
 
-  document.getElementById('newTplTrigger').value = '';
+  const nextNum = getNextTemplateTriggerNumber();
+  const triggerInput = document.getElementById('newTplTrigger');
+  if (triggerInput) triggerInput.value = nextNum;
+
   document.getElementById('newTplCategory').value = state.activeTemplateCategory !== 'All' ? state.activeTemplateCategory : '';
   document.getElementById('newTplTitleUa').value = '';
   document.getElementById('newTplTextUa').value = '';
-  document.getElementById('newTplTextEn').value = '';
+  const enInput = document.getElementById('newTplTextEn');
+  if (enInput) enInput.value = '';
   const statusEl = document.getElementById('addModalTranslateStatus');
   if (statusEl) statusEl.innerHTML = '';
+
+  onTemplateTargetChange('new');
 
   modal.classList.remove('hidden');
   safeCreateIcons(modal);
@@ -2717,12 +2881,15 @@ function handleSaveNewTemplate(e) {
   const category = document.getElementById('newTplCategory')?.value?.trim() || 'Загальне';
   const titleUa = document.getElementById('newTplTitleUa')?.value?.trim() || 'Без назви';
   const templateUa = document.getElementById('newTplTextUa')?.value?.trim() || '';
-  const templateEn = document.getElementById('newTplTextEn')?.value?.trim() || '';
+  let templateEn = document.getElementById('newTplTextEn')?.value?.trim() || '';
 
-  let cleanTrigger = triggerRaw.replace(/^::/, '').slice(0, 3).toLowerCase().trim();
+  if (target === 'callcenter') {
+    templateEn = '';
+  }
+
+  let cleanTrigger = triggerRaw.replace(/^::/, '').trim();
   if (!cleanTrigger) {
-    showToast('Введіть тригер (до 3 символів)');
-    return;
+    cleanTrigger = String(getNextTemplateTriggerNumber());
   }
   const trigger = '::' + cleanTrigger;
 
@@ -2758,13 +2925,13 @@ function handleSaveNewTemplate(e) {
   selectTemplate(newTemplate);
   if (window.firebaseDb) {
     window.firebaseDb.collection('shared_templates').doc(newTemplate.id).set(newTemplate)
-      .then(() => showToast('РќРѕРІРёР№ С€Р°Р±Р»РѕРЅ РґРѕРґР°РЅРѕ РґР»СЏ Р’РЎР†Р„Р‡ РєРѕРјР°РЅРґРё! рџЊђ'))
+      .then(() => showToast('Новий шаблон додано для ВСІЄЇ команди! 🌐'))
       .catch(err => {
         console.warn('Firebase template error:', err);
-        showToast('РќРѕРІРёР№ С€Р°Р±Р»РѕРЅ РґРѕРґР°РЅРѕ Р»РѕРєР°Р»СЊРЅРѕ');
+        showToast('Новий шаблон додано локально');
       });
   } else {
-    showToast('РќРѕРІРёР№ С€Р°Р±Р»РѕРЅ СѓСЃРїС–С€РЅРѕ РґРѕРґР°РЅРѕ!');
+    showToast('Новий шаблон успішно додано!');
   }
 }
 
@@ -2808,14 +2975,17 @@ function openEditTemplateModal(id) {
   if (!modal) return;
 
   document.getElementById('editTplId').value = t.id;
-  document.getElementById('editTplTarget').value = t.target || 'partners';
-  document.getElementById('editTplTrigger').value = (t.trigger || '').replace(/^::/, '').slice(0, 3);
+  const targetSelect = document.getElementById('editTplTarget');
+  if (targetSelect) targetSelect.value = t.target || 'partners';
+  document.getElementById('editTplTrigger').value = (t.trigger || '').replace(/^::/, '');
   document.getElementById('editTplCategory').value = t.category || '';
   document.getElementById('editTplTitleUa').value = t.titleUa || '';
   document.getElementById('editTplTextUa').value = t.templateUa || t.titleUa || '';
   document.getElementById('editTplTextEn').value = t.templateEn || '';
   const statusEl = document.getElementById('editModalTranslateStatus');
   if (statusEl) statusEl.innerHTML = '';
+
+  onTemplateTargetChange('edit');
 
   modal.classList.remove('hidden');
   safeCreateIcons(modal);
@@ -2838,12 +3008,15 @@ function handleSaveEditedTemplate(e) {
   const category = document.getElementById('editTplCategory')?.value?.trim() || 'Загальне';
   const titleUa = document.getElementById('editTplTitleUa')?.value?.trim() || 'Без назви';
   const templateUa = document.getElementById('editTplTextUa')?.value?.trim() || '';
-  const templateEn = document.getElementById('editTplTextEn')?.value?.trim() || '';
+  let templateEn = document.getElementById('editTplTextEn')?.value?.trim() || '';
 
-  let cleanTrigger = triggerRaw.replace(/^::/, '').slice(0, 3).toLowerCase().trim();
+  if (target === 'callcenter') {
+    templateEn = '';
+  }
+
+  let cleanTrigger = triggerRaw.replace(/^::/, '').trim();
   if (!cleanTrigger) {
-    showToast('Введіть тригер (до 3 символів)');
-    return;
+    cleanTrigger = (state.templates[idx].trigger || '::1').replace(/^::/, '');
   }
   const trigger = '::' + cleanTrigger;
 
@@ -2874,13 +3047,13 @@ function handleSaveEditedTemplate(e) {
   selectTemplate(state.templates[idx]);
   if (window.firebaseDb) {
     window.firebaseDb.collection('shared_templates').doc(id).set(state.templates[idx], { merge: true })
-      .then(() => showToast('РЁР°Р±Р»РѕРЅ РѕРЅРѕРІР»РµРЅРѕ РґР»СЏ Р’РЎР†РҐ РѕРїРµСЂР°С‚РѕСЂС–РІ! рџЊђ'))
+      .then(() => showToast('Шаблон оновлено для ВСІХ операторів! 🌐'))
       .catch(err => {
         console.warn('Firebase template edit error:', err);
-        showToast('РЁР°Р±Р»РѕРЅ РѕРЅРѕРІР»РµРЅРѕ Р»РѕРєР°Р»СЊРЅРѕ');
+        showToast('Шаблон оновлено локально');
       });
   } else {
-    showToast('РЁР°Р±Р»РѕРЅ СѓСЃРїС–С€РЅРѕ РѕРЅРѕРІР»РµРЅРѕ!');
+    showToast('Шаблон успішно оновлено!');
   }
 }
 
