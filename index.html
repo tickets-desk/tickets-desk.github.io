@@ -97,18 +97,17 @@
 
       <!-- Right Actions: Cloud Sync Status & Theme Toggle -->
       <div class="flex items-center gap-2 shrink-0">
-        <button id="forceSyncCloudBtn" 
-                onclick="manualSyncLocalAirlinesToCloud()" 
-                class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-sky-300 dark:border-sky-700 bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/60 text-xs font-semibold transition-all shadow-xs" 
-                title="Вивантажити мої посилання в спільну хмару для всіх операторів 🌐">
-          <i data-lucide="cloud-upload" class="w-3.5 h-3.5"></i>
-          <span class="hidden sm:inline">Синхронізувати з хмарою</span>
-        </button>
-
         <div id="cloudSyncBadge" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-[11px] font-medium text-slate-500 dark:text-slate-400 select-none transition-colors" title="Статус командної синхронізації">
           <span id="cloudSyncDot" class="w-2 h-2 rounded-full bg-slate-400"></span>
           <span id="cloudSyncText" class="hidden sm:inline">Локальний</span>
         </div>
+
+        <button id="forceSyncCloudBtn" 
+                onclick="manualSyncLocalAirlinesToCloud()" 
+                class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-sky-600 dark:hover:text-sky-400 transition-colors" 
+                title="Синхронізувати локальні зміни з хмарою Firebase 🌐">
+          <i data-lucide="cloud" class="w-4 h-4"></i>
+        </button>
 
         <button id="themeToggle" 
                 class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -500,13 +499,16 @@
             <div class="pt-2 flex flex-wrap items-center gap-2">
               <span class="text-[11px] font-semibold text-slate-400">Стиль рядка:</span>
               <button type="button" onclick="setAltFormatStyle('standard')" id="altFmtStd" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-300">
-                31.10.2026 - W45131 - 05:55-08:45 Route
+                Стандартний
+              </button>
+              <button type="button" onclick="setAltFormatStyle('segmented')" id="altFmtSeg" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200">
+                Детальний (по рейсах)
               </button>
               <button type="button" onclick="setAltFormatStyle('compact')" id="altFmtCmp" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200">
-                W45131 | 31.10.2026 | 05:55-08:45 | Route
+                Компактний (|)
               </button>
               <button type="button" onclick="setAltFormatStyle('brackets')" id="altFmtBrk" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200">
-                Route, 31.10.2026 (05:55-08:45), W45131
+                З дужками ()
               </button>
             </div>
           </div>

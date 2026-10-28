@@ -597,8 +597,9 @@ const state = {
     flight: '',
     time: '',
     route: '',
-    formatStyle: 'standard', // 'standard' | 'compact' | 'brackets'
+    formatStyle: 'standard', // 'standard' | 'segmented' | 'compact' | 'brackets'
     rawOcrText: '',
+    segments: [],
     isProcessing: false
   }
 };
@@ -843,7 +844,7 @@ async function manualSyncLocalAirlinesToCloud() {
   const originalHtml = btn ? btn.innerHTML : '';
   if (btn) {
     btn.disabled = true;
-    btn.innerHTML = `<i data-lucide="loader" class="w-3.5 h-3.5 animate-spin"></i> <span class="hidden sm:inline">Синхронізація...</span>`;
+    btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin text-sky-500"></i>`;
     safeCreateIcons(btn);
   }
 
@@ -3213,7 +3214,8 @@ async function preprocessAltImage(fileOrBlob) {
       URL.revokeObjectURL(url);
       try {
         const canvas = document.createElement('canvas');
-        const scale = 2.5; // Upscale 2.5x to clearly read small texts like LO149, EY712
+        // 2x upscale with high-quality smoothing for Tesseract neural net
+        const scale = 2.0;
         canvas.width = Math.round(img.width * scale);
         canvas.height = Math.round(img.height * scale);
         const ctx = canvas.getContext('2d');
@@ -3221,18 +3223,6 @@ async function preprocessAltImage(fileOrBlob) {
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        // Enhance contrast
-        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const d = imgData.data;
-        for (let i = 0; i < d.length; i += 4) {
-          const gray = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
-          const adjusted = gray > 180 ? 255 : (gray < 80 ? 0 : ((gray - 128) * 1.4 + 128));
-          d[i] = adjusted;
-          d[i + 1] = adjusted;
-          d[i + 2] = adjusted;
-        }
-        ctx.putImageData(imgData, 0, 0);
 
         canvas.toBlob((blob) => {
           resolve(blob || fileOrBlob);
@@ -3343,7 +3333,15 @@ function parseFlightText(text) {
     return;
   }
 
-  // 1. EXTRACT DATE
+  // Common noise 3-letter words to ignore when extracting IATA codes
+  const noiseIata = new Set([
+    'THE','FOR','AND','ALL','AIR','VIA','UTC','GMT','HRS','MIN','DAY','BAG',
+    'PER','PAX','TAX','FEE','OUT','RET','FLT','INT','NEW','BUS','ECO','DOM',
+    'PRO','ACT','NET','REG','CAR','ONE','TWO','MON','TUE','WED','THU','FRI',
+    'SAT','SUN','JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT',
+    'NOV','DEC','OTA','DIR','NON','CAB','ADT','CHD','INF','SEC','NOT','CAN'
+  ]);
+
   const monthMap = {
     'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06',
     'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12',
@@ -3357,203 +3355,253 @@ function parseFlightText(text) {
     'ott': '10', 'okt': '10', 'dic': '12', 'dez': '12'
   };
 
-  let extractedDate = '';
-  // Pattern: "Sat, 31 Oct 2026" or "31 Oct 2026"
-  const mDateText = text.match(/(?:[A-Za-z]{3},?\s+)?(\d{1,2})\s+([A-Za-zА-Яа-яіІєЄїЇ]{3,9})\s+(\d{4})/i);
-  if (mDateText) {
-    const day = mDateText[1].padStart(2, '0');
-    const monStr = mDateText[2].toLowerCase().slice(0, 3);
-    const yr = mDateText[3];
-    if (monthMap[monStr]) {
-      extractedDate = `${day}.${monthMap[monStr]}.${yr}`;
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+
+  function normalizeDate(raw) {
+    if (!raw) return '';
+    raw = raw.trim();
+
+    // DD.MM.YYYY or DD/MM/YYYY or DD-MM-YYYY
+    const d4 = raw.match(/\b(\d{1,2})[\.\/\-](\d{1,2})[\.\/\-](\d{4})\b/);
+    if (d4) {
+      return `${d4[1].padStart(2, '0')}.${d4[2].padStart(2, '0')}.${d4[3]}`;
+    }
+
+    // YYYY-MM-DD
+    const iso = raw.match(/\b(\d{4})[\.\/\-](\d{1,2})[\.\/\-](\d{1,2})\b/);
+    if (iso) {
+      return `${iso[3].padStart(2, '0')}.${iso[2].padStart(2, '0')}.${iso[1]}`;
+    }
+
+    // "Sat, 31 Oct 2026" or "31 Oct 2026" or "31 Oct"
+    const mWord = raw.match(/(?:[A-Za-z]{3},?\s+)?(\d{1,2})\s+([A-Za-zА-Яа-яіІєЄїЇ]{3,9})(?:\s+(\d{4}))?/i);
+    if (mWord) {
+      const day = mWord[1].padStart(2, '0');
+      const monStr = mWord[2].toLowerCase().slice(0, 3);
+      const yr = mWord[3] || currentYear;
+      if (monthMap[monStr]) {
+        return `${day}.${monthMap[monStr]}.${yr}`;
+      }
+    }
+
+    // MM-DD or DD-MM without year (e.g. "12-21", "12-22")
+    const d2 = raw.match(/\b(\d{1,2})[\.\/\-](\d{1,2})\b/);
+    if (d2) {
+      const n1 = parseInt(d2[1], 10);
+      const n2 = parseInt(d2[2], 10);
+      let day, month;
+      if (n1 > 12 && n2 <= 12) {
+        day = n1; month = n2;
+      } else if (n2 > 12 && n1 <= 12) {
+        day = n2; month = n1;
+      } else {
+        month = n1; day = n2;
+      }
+      const yr = (month < currentMonth - 2) ? currentYear + 1 : currentYear;
+      return `${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}.${yr}`;
+    }
+
+    return '';
+  }
+
+  // --- 1. EXTRACT ALL DATES ---
+  const foundDates = [];
+  const dateRegex = /\b(\d{1,2}[\.\/\-]\d{1,2}(?:[\.\/\-]\d{4})?)\b/g;
+  let dm;
+  while ((dm = dateRegex.exec(text)) !== null) {
+    const parsed = normalizeDate(dm[1]);
+    if (parsed && !foundDates.includes(parsed)) {
+      foundDates.push(parsed);
+    }
+  }
+  const wordDateRegex = /(?:[A-Za-z]{3},?\s+)?(\d{1,2}\s+[A-Za-zА-Яа-яіІєЄїЇ]{3,9}(?:\s+\d{4})?)/gi;
+  while ((dm = wordDateRegex.exec(text)) !== null) {
+    const parsed = normalizeDate(dm[1]);
+    if (parsed && !foundDates.includes(parsed)) {
+      foundDates.push(parsed);
     }
   }
 
-  // Pattern: DD.MM.YYYY or DD/MM/YYYY
-  if (!extractedDate) {
-    const mDateDigits = text.match(/\b(\d{1,2})[\.\/\-](\d{1,2})[\.\/\-](\d{4})\b/);
-    if (mDateDigits) {
-      extractedDate = `${mDateDigits[1].padStart(2, '0')}.${mDateDigits[2].padStart(2, '0')}.${mDateDigits[3]}`;
-    }
-  }
-
-  // Pattern: YYYY-MM-DD
-  if (!extractedDate) {
-    const mDateIso = text.match(/\b(\d{4})[\.\/\-](\d{1,2})[\.\/\-](\d{1,2})\b/);
-    if (mDateIso) {
-      extractedDate = `${mDateIso[3].padStart(2, '0')}.${mDateIso[2].padStart(2, '0')}.${mDateIso[1]}`;
-    }
-  }
-
-  // 2. EXTRACT TIMES (Departure - Arrival)
-  // Clean duration mentions first (e.g. 16h 10m, 2h 50m) so they aren't parsed as times
-  const cleanedForTime = text.replace(/\b\d{1,2}\s*[hH]\s*\d{1,2}\s*[mM](?:in)?\b/g, '');
-  const rawTimes = [];
-  const timeRegex = /\b([01]?\d|2[0-3]):([0-5]\d)\b/g;
-  let tMatch;
-  while ((tMatch = timeRegex.exec(cleanedForTime)) !== null) {
-    rawTimes.push(`${tMatch[1].padStart(2, '0')}:${tMatch[2]}`);
-  }
-
-  let extractedTime = '';
-  const hasNextDay = /\+1\s*d|\[\+1\s*d\]|\+1/i.test(text);
-  const nextDaySuffix = hasNextDay ? ' (+1d)' : '';
-
-  if (rawTimes.length >= 2) {
-    extractedTime = `${rawTimes[0]}-${rawTimes[rawTimes.length - 1]}${nextDaySuffix}`;
-  } else if (rawTimes.length === 1) {
-    extractedTime = `${rawTimes[0]}${nextDaySuffix}`;
-  }
-
-  // 3. EXTRACT AIRLINE & FLIGHT NUMBERS (Handles single flights & connecting flights like LO149 / EY712)
+  // --- 2. EXTRACT FLIGHT NUMBERS ---
   const flightMatches = [];
-  // Matches LO149, EY712, W45131, FR8321, LH1492, PC123, BA12
-  const flightRegex = /\b([A-Z]{2}|[A-Z][0-9]|[0-9][A-Z])\s*([0-9]{2,4})\b/g;
+  // Case-insensitive, 2-letter or letter+digit with 2-4 digits (e.g. TC203, TC136, W45131, LO149)
+  const flightRegex = /\b([a-z]{2}|[a-z][0-9]|[0-9][a-z])\s*([0-9]{2,4})\b/gi;
   let fm;
   while ((fm = flightRegex.exec(text)) !== null) {
     const code = fm[1].toUpperCase();
     const num = fm[2];
-    // Exclude aircraft models
-    if (code === 'A3' && (num === '20' || num === '21' || num === '30' || num === '50')) continue;
-    if (code === 'B7' && (num === '37' || num === '77' || num === '87')) continue;
+    if (code === 'A3' && ['20', '21', '30', '50'].includes(num.slice(0, 2))) continue;
+    if (code === 'B7' && ['37', '77', '87'].includes(num.slice(0, 2))) continue;
+    if (['2024', '2025', '2026', '2027', '2028'].includes(num)) continue;
     const fullFlt = `${code}${num}`;
     if (!flightMatches.includes(fullFlt)) {
       flightMatches.push(fullFlt);
     }
   }
 
-  let extractedFlight = '';
-  if (flightMatches.length > 0) {
-    extractedFlight = flightMatches.join(' / ');
-  } else {
-    // Check known airline names from catalog
-    let detectedIata = '';
+  if (!flightMatches.length) {
     for (const ac of ALT_AIRLINE_CATALOG) {
       const re = new RegExp(`\\b${ac.name}\\b`, 'i');
       if (re.test(text)) {
-        detectedIata = ac.iata;
+        const digits = text.match(/(?:flight|flt|рейс|№)?\s*\b([1-9][0-9]{2,3})\b/i);
+        flightMatches.push(digits ? `${ac.iata}${digits[1]}` : ac.iata);
         break;
       }
     }
-    if (detectedIata) {
-      const digits = text.match(/(?:flight|flt|рейс|№)?\s*\b([1-9][0-9]{2,3})\b/i);
-      extractedFlight = digits ? `${detectedIata}${digits[1]}` : detectedIata;
-    }
   }
 
-  // 4. EXTRACT ROUTE (City [IATA] or Clean City Lines)
-  let extractedRoute = '';
-  
-  // UI noise words that should NEVER appear in a route
-  const uiNoiseWords = /^(CHANGE|PASSENGER|PASSENGERS|FLIGHTS|FLIGHT|Smart|fare|ticket|Bundle|Administration|fee|TOTAL|price|order|details|Show|baggage|cabin|checked|included|Adult|Infant|Child|Select|Book|deal|lowest|Direct|Non-stop|Terminal|operated|Return|Outbound|Inbound|Departing|Arriving|Economy|Business|First|Premium|Class|Cancel|Modify|Manage|Edit|View|Add|Remove|Delete|Update|Save|Close|Back|Next|Continue|Submit|Confirm|OK|Yes|No|Search|Filter|Sort|Apply|Reset|Clear|Help|Info|Warning|Error|Loading|Please|wait|Thank|you)$/i;
-  
-  // Try pattern: City [IATA] or City (IATA) e.g. "Warsaw [WAW]" and "Abu Dhabi [AUH]"
-  const cityIataRegex = /([A-Za-zА-Яа-яіІєЄїЇ\s\-]+?)\s*[\[\(]([A-Z]{3})[\]\)]/g;
-  const cityIataMatches = [];
-  let cim;
-  while ((cim = cityIataRegex.exec(text)) !== null) {
-    let cityName = cim[1].trim()
-      .replace(/^(lowest|price|deal|direct|flight|from|to|depart|arrive)\s+/i, '')
-      .trim();
-    const iata = cim[2].toUpperCase();
-    if (cityName.length >= 2 && !uiNoiseWords.test(cityName)) {
-      cityIataMatches.push(`${cityName} (${iata})`);
-    }
+  // --- 3. EXTRACT TIMES & CONNECTING LEGS (All 4 Hours!) ---
+  const cleanedText = text
+    .replace(/\b\d{1,2}\s*[hH]\s*\d{1,2}\s*[mM](?:in)?\b/gi, '')
+    .replace(/\b\d{1,2}\s*[hH]\b/gi, '')
+    .replace(/\b\d{1,2}\s*[mM](?:in)?\b/gi, '');
+
+  const rawTimes = [];
+  const timeRegex = /\b([01]?\d|2[0-3]):([0-5]\d)\b/g;
+  let tm;
+  while ((tm = timeRegex.exec(cleanedText)) !== null) {
+    rawTimes.push(`${tm[1].padStart(2, '0')}:${tm[2]}`);
   }
 
-  if (cityIataMatches.length >= 2) {
-    extractedRoute = `${cityIataMatches[0]} – ${cityIataMatches[cityIataMatches.length - 1]}`;
+  // Detect summary header times vs segment times:
+  // e.g. [23:40, 13:20, 23:40, 01:10, 12:50, 13:20]
+  let segmentTimes = [];
+  if (rawTimes.length >= 6 && rawTimes[0] === rawTimes[2] && rawTimes[1] === rawTimes[rawTimes.length - 1]) {
+    segmentTimes = rawTimes.slice(2);
+  } else {
+    segmentTimes = [...rawTimes];
   }
 
-  // Smart approach: search ENTIRE text for "CityName – CityName" pattern
-  // This catches "Baku – Rome Fiumicino" but skips "CHANGE – W" (all-caps noise + single char)
-  if (!extractedRoute) {
-    // Pattern: ProperCaseWord(s) <dash> ProperCaseWord(s)
-    // Each side must start with uppercase followed by lowercase, min 3 chars per side
-    // Allows multi-word city names like "Rome Fiumicino", "Abu Dhabi", "New York"
-    const routeDashRegex = /([A-ZА-ЯІЇЄ][a-zа-яіїє]{2,}(?:[\s\-][A-ZА-ЯІЇЄ][a-zа-яіїє]{1,})*)\s*[–—]\s*([A-ZА-ЯІЇЄ][a-zа-яіїє]{2,}(?:[\s\-][A-ZА-ЯІЇЄ][a-zа-яіїє]{1,})*)/g;
-    const routeCandidates = [];
-    let rm;
-    while ((rm = routeDashRegex.exec(text)) !== null) {
-      const origin = rm[1].trim();
-      const dest = rm[2].trim();
-      // Filter out noise matches
-      if (uiNoiseWords.test(origin) || uiNoiseWords.test(dest)) continue;
-      // Skip if either side is a month or day name
-      if (/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Sat|Sun|Mon|Tue|Wed|Thu|Fri)$/i.test(origin)) continue;
-      if (/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Sat|Sun|Mon|Tue|Wed|Thu|Fri)$/i.test(dest)) continue;
-      // Skip airline names
-      if (/^(Wizz|Ryanair|Lufthansa|Turkish|Etihad|Emirates|Qatar|Pegasus|LOT|Airbus|Boeing)$/i.test(origin)) continue;
-      if (/^(Wizz|Ryanair|Lufthansa|Turkish|Etihad|Emirates|Qatar|Pegasus|LOT|Airbus|Boeing)$/i.test(dest)) continue;
-      routeCandidates.push({ origin, dest, full: `${origin} – ${dest}` });
-    }
-    if (routeCandidates.length > 0) {
-      // If multiple candidates, prefer the longest (most likely the real city pair)
-      routeCandidates.sort((a, b) => b.full.length - a.full.length);
-      extractedRoute = routeCandidates[0].full;
-    }
-  }
-
-  // Fallback: parse clean lines with dash separators  
-  if (!extractedRoute) {
-    const lines = text.split('\n')
-      .map(l => l.trim())
-      .filter(l => {
-        if (!l || l.length < 5) return false;
-        // Extended filter: exclude all UI noise, prices, dates, times, airline names
-        if (/Airbus|Boeing|Embraer|Bombardier|A32|A33|B73|B77|operated|Wizz|Ryanair|Lufthansa|Turkish|easyJet|LOT|Etihad|Emirates|Qatar|Pegasus/i.test(l)) return false;
-        if (/CHANGE|PASSENGER|FLIGHTS|Smart\s*fare|Bundle|Administration|fee|TOTAL|order|details|Select|Book|deal|lowest|Direct|Non-stop|Terminal/i.test(l)) return false;
-        if (/Sat|Sun|Mon|Tue|Wed|Thu|Fri|Oct|Nov|Dec|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep/i.test(l)) return false;
-        if (/UTC|GMT|\dh\s*\d+m|Price|Flight\s*ticket|cabin\s*bag|checked\s*bag|baggage|included|Adult|Infant|Child/i.test(l)) return false;
-        if (/[\$€£₴₽¥]/.test(l)) return false;
-        if (/^\d{1,2}:\d{2}/.test(l)) return false;
-        if (/^\d{1,2}[\.\/-]\d{1,2}/.test(l)) return false;
-        if (/^\d+$/.test(l.replace(/\s/g, ''))) return false;
-        return true;
-      });
-
-    for (const line of lines) {
-      if (line.includes('->') || line.includes('–') || line.includes(' - ') || /\bto\b/i.test(line)) {
-        const parts = line.split(/(?:->|–|\s+-\s+|\s+to\s+)/i);
-        if (parts.length >= 2) {
-          const p0 = parts[0].trim().replace(/[^A-Za-zА-Яа-яіІєЄїЇ\s\-]/g, '').trim();
-          const p1 = parts[parts.length - 1].trim().replace(/[^A-Za-zА-Яа-яіІєЄїЇ\s\-]/g, '').trim();
-          if (p0.length >= 3 && p1.length >= 3 && !uiNoiseWords.test(p0) && !uiNoiseWords.test(p1)) {
-            extractedRoute = `${p0} – ${p1}`;
-            break;
-          }
-        }
+  let formattedTimes = '';
+  const legTimes = [];
+  if (segmentTimes.length >= 4) {
+    // 2 or more connecting legs: (T0-T1) and (T2-T3)...
+    for (let i = 0; i < segmentTimes.length - 1; i += 2) {
+      if (segmentTimes[i] && segmentTimes[i + 1]) {
+        legTimes.push(`${segmentTimes[i]}-${segmentTimes[i + 1]}`);
       }
     }
+    formattedTimes = legTimes.join(' / ');
+  } else if (segmentTimes.length >= 2) {
+    // 1 direct leg
+    const hasNextDay = /\+1\s*d|\[\+1\s*d\]|\+1/i.test(text);
+    formattedTimes = `${segmentTimes[0]}-${segmentTimes[1]}${hasNextDay ? ' (+1d)' : ''}`;
+    legTimes.push(formattedTimes);
+  } else if (segmentTimes.length === 1) {
+    formattedTimes = segmentTimes[0];
+    legTimes.push(formattedTimes);
   }
 
-  // Always update state & input fields (even if empty, don't leave old flight data!)
-  state.altParser.date = extractedDate;
-  state.altParser.flight = extractedFlight;
-  state.altParser.time = extractedTime;
-  state.altParser.route = extractedRoute;
+  // --- 4. EXTRACT AIRPORTS & ROUTE (All AP!) ---
+  const transferMatch = text.match(/(?:transfer|layover|transit|пересадка|зупинка)\s+(?:in\s+)?([A-Z]{3})\b/i);
+  const transferIata = transferMatch ? transferMatch[1].toUpperCase() : '';
 
+  // Extract from lines with times (chronological segment milestones)
+  const detailAirports = [];
+  lines.forEach(line => {
+    if (/\b([01]?\d|2[0-3]):([0-5]\d)\b/.test(line)) {
+      const ms = line.match(/\b([A-Z]{3})\b/g);
+      if (ms) {
+        ms.forEach(c => {
+          const up = c.toUpperCase();
+          if (!noiseIata.has(up)) {
+            detailAirports.push(up);
+          }
+        });
+      }
+    }
+  });
+
+  let finalAirports = [];
+  if (detailAirports.length >= 4) {
+    // Detailed segment lines: e.g. [NBO, DAR, DAR, ZNZ] from the 4 milestone lines
+    const segAirports = detailAirports.slice(-4);
+    const dedup = [];
+    segAirports.forEach(c => {
+      if (!dedup.length || dedup[dedup.length - 1] !== c) {
+        dedup.push(c);
+      }
+    });
+    if (dedup.length >= 2) {
+      finalAirports = dedup;
+    }
+  }
+
+  // Fallback to general airport scan if detailed milestone not matched
+  if (finalAirports.length < 2) {
+    const allUnique = [];
+    lines.forEach(line => {
+      const ms = line.match(/\b([A-Z]{3})\b/g);
+      if (ms) {
+        ms.forEach(c => {
+          const up = c.toUpperCase();
+          if (!noiseIata.has(up) && !allUnique.includes(up)) allUnique.push(up);
+        });
+      }
+    });
+    if (transferIata && allUnique.includes(transferIata) && allUnique.length >= 3) {
+      const withoutTransfer = allUnique.filter(c => c !== transferIata);
+      finalAirports = [withoutTransfer[0], transferIata, withoutTransfer[withoutTransfer.length - 1]];
+    } else if (allUnique.length >= 2) {
+      finalAirports = allUnique.slice(0, 3);
+    }
+  }
+
+  // Ensure transfer airport is placed in the middle
+  if (transferIata && finalAirports.length >= 3 && finalAirports.includes(transferIata)) {
+    if (finalAirports[finalAirports.length - 1] === transferIata) {
+      finalAirports = finalAirports.filter(c => c !== transferIata);
+      finalAirports.splice(1, 0, transferIata);
+    }
+  }
+
+  let extractedRoute = '';
+  if (finalAirports.length >= 2) {
+    extractedRoute = finalAirports.join(' – ');
+  } else {
+    const routeDashRegex = /([A-ZА-ЯІЇЄ][a-zа-яіїє]{2,}(?:[\s\-][A-ZА-ЯІЇЄ][a-zа-яіїє]{1,})*)\s*[–—\-]\s*([A-ZА-ЯІЇЄ][a-zа-яіїє]{2,}(?:[\s\-][A-ZА-ЯІЇЄ][a-zа-яіїє]{1,})*)/g;
+    let rm = routeDashRegex.exec(text);
+    if (rm) {
+      extractedRoute = `${rm[1].trim()} – ${rm[2].trim()}`;
+    }
+  }
+
+  // --- 5. BUILD SEGMENTS OBJECTS (FOR SEGMENTED STYLE) ---
+  const segments = [];
+  if (legTimes.length > 1 && finalAirports.length >= legTimes.length + 1) {
+    for (let i = 0; i < legTimes.length; i++) {
+      const flt = flightMatches[i] || flightMatches[0] || '';
+      const r = `${finalAirports[i]}-${finalAirports[i + 1]}`;
+      const t = legTimes[i];
+      const d = foundDates[i] || foundDates[0] || '';
+      segments.push({ flight: flt, route: r, time: t, date: d });
+    }
+  } else if (legTimes.length === 1) {
+    const flt = flightMatches[0] || '';
+    const r = extractedRoute ? extractedRoute.replace(/\s*–\s*/g, '-') : '';
+    const t = legTimes[0];
+    const d = foundDates[0] || '';
+    segments.push({ flight: flt, route: r, time: t, date: d });
+  }
+
+  // Populate state
+  state.altParser.date = foundDates.join(' / ');
+  state.altParser.flight = flightMatches.join(' / ');
+  state.altParser.time = formattedTimes;
+  state.altParser.route = extractedRoute;
+  state.altParser.segments = segments;
+
+  // Populate input fields
   const elDate = document.getElementById('altFieldDate');
   const elFlight = document.getElementById('altFieldFlight');
   const elTime = document.getElementById('altFieldTime');
   const elRoute = document.getElementById('altFieldRoute');
 
-  if (elDate) {
-    elDate.value = extractedDate;
-    elDate.placeholder = extractedDate ? '' : 'Введіть дату (напр. 31.10.2026)';
-  }
-  if (elFlight) {
-    elFlight.value = extractedFlight;
-    elFlight.placeholder = extractedFlight ? '' : 'Введіть рейс (напр. LO149)';
-  }
-  if (elTime) {
-    elTime.value = extractedTime;
-    elTime.placeholder = extractedTime ? '' : '00:00-00:00';
-  }
-  if (elRoute) {
-    elRoute.value = extractedRoute;
-    elRoute.placeholder = extractedRoute ? '' : 'Звідки – Куди';
-  }
+  if (elDate) elDate.value = state.altParser.date;
+  if (elFlight) elFlight.value = state.altParser.flight;
+  if (elTime) elTime.value = state.altParser.time;
+  if (elRoute) elRoute.value = state.altParser.route;
 
   updateAltResultLine();
 }
@@ -3570,6 +3618,7 @@ function setAltFormatStyle(style) {
   state.altParser.formatStyle = style;
   
   const std = document.getElementById('altFmtStd');
+  const seg = document.getElementById('altFmtSeg');
   const cmp = document.getElementById('altFmtCmp');
   const brk = document.getElementById('altFmtBrk');
 
@@ -3577,6 +3626,7 @@ function setAltFormatStyle(style) {
   const inactiveClass = "px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200";
 
   if (std) std.className = style === 'standard' ? activeClass : inactiveClass;
+  if (seg) seg.className = style === 'segmented' ? activeClass : inactiveClass;
   if (cmp) cmp.className = style === 'compact' ? activeClass : inactiveClass;
   if (brk) brk.className = style === 'brackets' ? activeClass : inactiveClass;
 
@@ -3584,7 +3634,7 @@ function setAltFormatStyle(style) {
 }
 
 function updateAltResultLine() {
-  const { date, flight, time, route, formatStyle } = state.altParser;
+  const { date, flight, time, route, formatStyle, segments } = state.altParser;
   let formatted = '';
 
   const displayDate = date || '';
@@ -3592,19 +3642,29 @@ function updateAltResultLine() {
   const displayTime = time || '';
   const displayRoute = route || '';
 
-  if (formatStyle === 'compact') {
+  if (formatStyle === 'segmented' && segments && segments.length > 0) {
+    const legStrings = segments.map(s => {
+      const parts = [];
+      if (s.flight) parts.push(s.flight);
+      if (s.route) parts.push(s.route);
+      if (s.time) parts.push(s.time);
+      if (s.date) parts.push(`(${s.date.slice(0, 5)})`);
+      return parts.join(' ');
+    });
+    formatted = legStrings.join(' / ');
+  } else if (formatStyle === 'compact') {
     const parts = [displayFlight, displayDate, displayTime, displayRoute].filter(Boolean);
     formatted = parts.join(' | ');
   } else if (formatStyle === 'brackets') {
     formatted = `${displayRoute ? displayRoute + ', ' : ''}${displayDate}${displayTime ? ' (' + displayTime + ')' : ''}${displayFlight ? ', ' + displayFlight : ''}`;
   } else {
-    // Standard format (user requested: 31.10.2026 - W45131 - 05:55-08:45 Tirana – Brussels Charleroi)
+    // Standard format
     const parts = [];
     if (displayDate) parts.push(displayDate);
     if (displayFlight) parts.push(displayFlight);
     if (displayTime) parts.push(displayTime);
-    const prefix = parts.join(' - ');
-    formatted = prefix ? (displayRoute ? `${prefix} ${displayRoute}` : prefix) : displayRoute;
+    if (displayRoute) parts.push(displayRoute);
+    formatted = parts.join(' - ');
   }
 
   const displayEl = document.getElementById('altResultLineDisplay');
@@ -3674,10 +3734,26 @@ function clearAltImage() {
   if (fileInput) fileInput.value = '';
   if (rawInput) rawInput.value = '';
 
+  state.altParser.date = '';
+  state.altParser.flight = '';
+  state.altParser.time = '';
+  state.altParser.route = '';
+  state.altParser.segments = [];
   state.altParser.rawOcrText = '';
+
+  const elDate = document.getElementById('altFieldDate');
+  const elFlight = document.getElementById('altFieldFlight');
+  const elTime = document.getElementById('altFieldTime');
+  const elRoute = document.getElementById('altFieldRoute');
+  if (elDate) elDate.value = '';
+  if (elFlight) elFlight.value = '';
+  if (elTime) elTime.value = '';
+  if (elRoute) elRoute.value = '';
+
   const debugEl = document.getElementById('altOcrRawText');
   if (debugEl) debugEl.textContent = 'Текст ще не завантажено';
 
+  updateAltResultLine();
   showToast('Скріншот очищено');
 }
 
