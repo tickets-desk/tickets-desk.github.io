@@ -592,7 +592,6 @@ const state = {
   favoriteTemplates: new Set(),
   showOnlyFavoriteTemplates: false,
   airlineNotes: {},
-  geminiApiKey: localStorage.getItem('tickets_ua_gemini_key') || '',
   altParser: {
     date: '',
     flight: '',
@@ -774,26 +773,6 @@ function initFirebaseSync() {
     }, (err) => {
       console.warn('Firestore notes sync warning:', err);
     });
-
-    // 4. Listen for Shared AI Translation Config (Gemini API Key)
-    firestoreDb.collection('shared_settings').doc('ai_config').onSnapshot((doc) => {
-      if (doc.exists) {
-        const data = doc.data();
-        if (data && typeof data.geminiApiKey === 'string') {
-          state.geminiApiKey = data.geminiApiKey;
-          if (data.geminiApiKey) {
-            localStorage.setItem('tickets_ua_gemini_key', data.geminiApiKey);
-          } else {
-            localStorage.removeItem('tickets_ua_gemini_key');
-          }
-          updateAiBadgeStatus();
-        }
-      }
-    }, (err) => {
-      console.warn('Firestore ai_config sync warning:', err);
-    });
-
-    updateAiBadgeStatus();
 
   } catch (err) {
     console.warn('Firebase init error:', err);
@@ -1855,14 +1834,6 @@ function renderSelectedTemplateWorkspace() {
         </div>
 
         <div class="flex items-center gap-2">
-          ${!isCallCenter ? `
-            <button onclick="openAiSettingsModal()"
-                    class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-50 dark:bg-purple-950/60 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors shadow-2xs"
-                    title="ШІ-переклад авіаційною англійською (Gemini API)">
-              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
-              <span>ШІ-переклад</span>
-            </button>
-          ` : ''}
           <button onclick="openEditTemplateModal('${t.id}')"
                   class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:border-amber-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors shadow-2xs">
             <i data-lucide="edit-3" class="w-3.5 h-3.5 text-amber-500"></i>
@@ -1965,10 +1936,10 @@ function renderSelectedTemplateWorkspace() {
             <div class="flex items-center gap-2">
               <span id="translationStatus" class="text-[11px]"></span>
               <button onclick="manualTranslateUaToEn()" 
-                      title="Перекласти поточний український текст на англійську за допомогою ШІ або словника"
-                      class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-600 hover:bg-purple-500 text-white shadow-xs transition-all">
-                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-                <span>⚡ ШІ-переклад на EN</span>
+                      title="Перекласти поточний український текст на англійську"
+                      class="flex items-center gap-1 text-[11px] font-bold text-sky-600 hover:text-sky-500 dark:text-sky-400 hover:underline">
+                <i data-lucide="languages" class="w-3.5 h-3.5"></i>
+                <span>⚡ Оновити EN</span>
               </button>
               <button onclick="copyScriptUaToClipboard()" 
                       title="Скопіювати український варіант"
@@ -2107,7 +2078,7 @@ function onTextareaEdit(val) {
   updateUnfilledWarningState();
 }
 
-// Live Translation Engine: UA -> EN with Gemini AI, Google Neural & MyMemory fallback
+// Live Translation Engine: UA -> EN with Google Neural & MyMemory fallback
 let translateDebounceTimer = null;
 let modalTranslateDebounceTimer = null;
 
@@ -2127,50 +2098,6 @@ async function translateTextUaToEn(text) {
     });
     return res;
   };
-
-  // ENGINE 0: Google Gemini AI (Context-aware professional airline customer support)
-  const geminiKey = (state.geminiApiKey || localStorage.getItem('tickets_ua_gemini_key') || '').trim();
-  if (geminiKey) {
-    try {
-      const systemInstruction = `You are an expert customer support agent for Tickets.ua communicating with airline partner desks.
-Translate the following Ukrainian support ticket message into polite, fluent, natural, professional airline support English.
-Use industry-standard airline terminology (e.g. "involuntary refund", "medical waiver", "schedule change", "flight cancellation", "name correction", "release seats", "waiver authorization").
-DO NOT translate or alter placeholder tags like [PNR], [FLIGHT], [PASSENGER_NAME], [DATE], [TIME], [PRICE], [OLD_ORDER_ID]. Keep them exactly in brackets and uppercase.
-Return ONLY the final translated English text without quotes, introductory remarks, markdown fences, or commentary.`;
-
-      const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(geminiKey)}`;
-      const res = await fetch(geminiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: `${systemInstruction}\n\nUkrainian text to translate:\n${trimmed}` }
-              ]
-            }
-          ],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 1000
-          }
-        })
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (aiText && aiText.trim()) {
-          let clean = aiText.trim().replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/i, '').trim();
-          return restorePlaceholders(clean);
-        }
-      } else {
-        console.warn('Gemini AI API HTTP error:', res.status);
-      }
-    } catch (err) {
-      console.warn('Gemini AI translation error, falling back to Google Translate:', err);
-    }
-  }
 
   // Protect placeholders with tokens so classical translators never break them
   const placeholderTokens = [];
@@ -2274,10 +2201,7 @@ function onUaTextareaEdit(val) {
         updateUnfilledWarningState();
       }
       if (statusEl) {
-        const isAi = !!(state.geminiApiKey && state.geminiApiKey.trim());
-        statusEl.innerHTML = isAi
-          ? `<span class="inline-flex items-center gap-1 text-purple-600 dark:text-purple-400 font-semibold"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Перекладено ШІ (Gemini)</span>`
-          : `<span class="inline-flex items-center gap-1 text-emerald-500 font-semibold"><i data-lucide="check" class="w-3.5 h-3.5"></i> Перекладено</span>`;
+        statusEl.innerHTML = `<span class="inline-flex items-center gap-1 text-emerald-500 font-semibold"><i data-lucide="check" class="w-3.5 h-3.5"></i> Перекладено</span>`;
         safeCreateIcons(statusEl);
         setTimeout(() => { if (statusEl) statusEl.innerHTML = ''; }, 2500);
       }
@@ -2310,10 +2234,7 @@ async function manualTranslateUaToEn() {
     updateUnfilledWarningState();
     showToast('Переклад оновлено!');
     if (statusEl) {
-      const isAi = !!(state.geminiApiKey && state.geminiApiKey.trim());
-      statusEl.innerHTML = isAi
-        ? `<span class="inline-flex items-center gap-1 text-purple-600 dark:text-purple-400 font-semibold"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Перекладено ШІ (Gemini)</span>`
-        : `<span class="inline-flex items-center gap-1 text-emerald-500 font-semibold"><i data-lucide="check" class="w-3.5 h-3.5"></i> Перекладено</span>`;
+      statusEl.innerHTML = `<span class="inline-flex items-center gap-1 text-emerald-500 font-semibold"><i data-lucide="check" class="w-3.5 h-3.5"></i> Перекладено</span>`;
       safeCreateIcons(statusEl);
       setTimeout(() => { if (statusEl) statusEl.innerHTML = ''; }, 2500);
     }
@@ -2351,10 +2272,7 @@ function onModalUaInput(val, mode) {
         enInput.value = translated;
       }
       if (statusEl) {
-        const isAi = !!(state.geminiApiKey && state.geminiApiKey.trim());
-        statusEl.innerHTML = isAi
-          ? `<span class="inline-flex items-center gap-1 text-purple-600 dark:text-purple-400 font-semibold"><i data-lucide="sparkles" class="w-3 h-3"></i> ШІ-переклад (Gemini)</span>`
-          : `<span class="inline-flex items-center gap-1 text-emerald-500 font-semibold"><i data-lucide="check" class="w-3 h-3"></i> Перекладено</span>`;
+        statusEl.innerHTML = `<span class="inline-flex items-center gap-1 text-emerald-500 font-semibold"><i data-lucide="check" class="w-3 h-3"></i> Перекладено</span>`;
         safeCreateIcons(statusEl);
         setTimeout(() => { if (statusEl) statusEl.innerHTML = ''; }, 2500);
       }
@@ -2365,214 +2283,6 @@ function onModalUaInput(val, mode) {
       }
     }
   }, 600);
-}
-
-// ==========================================
-// AI Translation (Google Gemini) Management
-// ==========================================
-function openAiSettingsModal() {
-  const modal = document.getElementById('aiSettingsModal');
-  if (!modal) return;
-
-  const keyInput = document.getElementById('geminiApiKeyInput');
-  if (keyInput) {
-    keyInput.value = state.geminiApiKey || '';
-    keyInput.type = 'password';
-  }
-
-  const eyeIcon = document.getElementById('geminiKeyEyeIcon');
-  if (eyeIcon) {
-    eyeIcon.setAttribute('data-lucide', 'eye');
-  }
-
-  const testOutput = document.getElementById('geminiTestOutput');
-  if (testOutput) {
-    testOutput.innerHTML = 'Натисніть «Перевірити ключ» для тестового запиту.';
-  }
-
-  updateAiModalStatusBanner();
-  modal.classList.remove('hidden');
-  safeCreateIcons(modal);
-}
-
-function closeAiSettingsModal() {
-  const modal = document.getElementById('aiSettingsModal');
-  if (modal) modal.classList.add('hidden');
-}
-
-function toggleGeminiKeyVisibility() {
-  const input = document.getElementById('geminiApiKeyInput');
-  const icon = document.getElementById('geminiKeyEyeIcon');
-  if (!input) return;
-  if (input.type === 'password') {
-    input.type = 'text';
-    if (icon) icon.setAttribute('data-lucide', 'eye-off');
-  } else {
-    input.type = 'password';
-    if (icon) icon.setAttribute('data-lucide', 'eye');
-  }
-  const modal = document.getElementById('aiSettingsModal');
-  if (modal) safeCreateIcons(modal);
-}
-
-function updateAiModalStatusBanner() {
-  const banner = document.getElementById('aiModalStatusBanner');
-  if (!banner) return;
-  const hasKey = !!(state.geminiApiKey && state.geminiApiKey.trim());
-
-  if (hasKey) {
-    banner.className = 'p-3 rounded-xl border border-purple-200 dark:border-purple-800 bg-purple-50/70 dark:bg-purple-950/40 text-purple-900 dark:text-purple-200 flex items-center gap-2.5';
-    banner.innerHTML = `
-      <i data-lucide="check-circle-2" class="w-5 h-5 text-purple-600 dark:text-purple-400 shrink-0"></i>
-      <div>
-        <strong class="font-bold">ШІ-переклад активний для всієї команди! ✨</strong>
-        <p class="text-[11px] text-purple-700/80 dark:text-purple-300/80">Використовується Google Gemini Flash із професійним авіаційним промптом.</p>
-      </div>
-    `;
-  } else {
-    banner.className = 'p-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 flex items-center gap-2.5';
-    banner.innerHTML = `
-      <i data-lucide="info" class="w-5 h-5 text-slate-400 shrink-0"></i>
-      <div>
-        <strong class="font-bold">ШІ-переклад не налаштовано</strong>
-        <p class="text-[11px] text-slate-500 dark:text-slate-400">Зараз використовується стандартний перекладач Google Translate.</p>
-      </div>
-    `;
-  }
-  safeCreateIcons(banner);
-}
-
-function updateAiBadgeStatus() {
-  const dot = document.getElementById('aiActiveIndicator');
-  const hasKey = !!(state.geminiApiKey && state.geminiApiKey.trim());
-  if (dot) {
-    if (hasKey) {
-      dot.className = 'w-2 h-2 rounded-full bg-purple-500 shadow-xs shadow-purple-500/50 animate-pulse';
-      dot.title = 'ШІ-переклад активний (Gemini)';
-    } else {
-      dot.className = 'w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600';
-      dot.title = 'ШІ-переклад не налаштовано';
-    }
-  }
-}
-
-async function saveGeminiApiKey() {
-  const input = document.getElementById('geminiApiKeyInput');
-  const key = input ? input.value.trim() : '';
-
-  if (!key) {
-    showToast('Будь ласка, введіть ключ або натисніть «Очистити»');
-    return;
-  }
-
-  state.geminiApiKey = key;
-  try {
-    localStorage.setItem('tickets_ua_gemini_key', key);
-  } catch (err) {}
-
-  updateAiBadgeStatus();
-  updateAiModalStatusBanner();
-
-  if (window.firebaseDb) {
-    window.firebaseDb.collection('shared_settings').doc('ai_config').set({
-      geminiApiKey: key,
-      updatedAt: new Date().toISOString()
-    }, { merge: true })
-      .then(() => showToast('ШІ-переклад активовано для ВСІЄЇ команди! 🌐✨'))
-      .catch(err => {
-        console.warn('Firebase ai_config save error:', err);
-        showToast('Ключ збережено локально');
-      });
-  } else {
-    showToast('Ключ збережено локально');
-  }
-
-  closeAiSettingsModal();
-}
-
-function clearGeminiApiKey() {
-  if (!confirm('Вимкнути ШІ-переклад та видалити ключ?')) return;
-
-  state.geminiApiKey = '';
-  try {
-    localStorage.removeItem('tickets_ua_gemini_key');
-  } catch (err) {}
-
-  const input = document.getElementById('geminiApiKeyInput');
-  if (input) input.value = '';
-
-  updateAiBadgeStatus();
-  updateAiModalStatusBanner();
-
-  if (window.firebaseDb) {
-    window.firebaseDb.collection('shared_settings').doc('ai_config').set({
-      geminiApiKey: '',
-      updatedAt: new Date().toISOString()
-    }, { merge: true })
-      .then(() => showToast('ШІ-переклад вимкнено для всієї команди'))
-      .catch(err => console.warn(err));
-  } else {
-    showToast('Ключ видалено');
-  }
-
-  closeAiSettingsModal();
-}
-
-async function testGeminiTranslation() {
-  const input = document.getElementById('geminiApiKeyInput');
-  const key = input ? input.value.trim() : (state.geminiApiKey || '');
-  const out = document.getElementById('geminiTestOutput');
-  if (!key) {
-    if (out) out.innerHTML = '<span class="text-rose-500 font-semibold">Спочатку введіть ключ API!</span>';
-    return;
-  }
-  if (out) {
-    out.innerHTML = '<span class="text-amber-500 flex items-center gap-1 font-medium"><i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> Тестуємо зв\'язок з Gemini AI...</span>';
-    safeCreateIcons(out);
-  }
-
-  try {
-    const testText = "Просимо погодити вимушене повернення для пасажира [PASSENGER_NAME] за бронюванням [PNR].";
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(key)}`;
-    const res = await fetch(geminiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              {
-                text: `You are an expert customer support agent for Tickets.ua communicating with airline partner desks.
-Translate the following Ukrainian support ticket into polite, natural, fluent airline support English.
-Keep [PASSENGER_NAME] and [PNR] intact in brackets and uppercase. Return ONLY the English translation without preamble, quotes, or markdown fences.
-
-Ukrainian: ${testText}`
-              }
-            ]
-          }
-        ]
-      })
-    });
-
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      const msg = errData?.error?.message || `HTTP ${res.status}`;
-      if (out) out.innerHTML = `<span class="text-rose-500 font-semibold">Помилка Google API: ${escapeHtml(msg)}</span>`;
-      return;
-    }
-
-    const data = await res.json();
-    const result = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-    if (out) {
-      out.innerHTML = `<div class="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200">
-        <strong class="font-bold text-emerald-700 dark:text-emerald-300">✓ Успішно! Переклад Gemini AI:</strong><br/>
-        "${escapeHtml(result)}"
-      </div>`;
-      safeCreateIcons(out);
-    }
-  } catch (err) {
-    if (out) out.innerHTML = `<span class="text-rose-500 font-semibold">Помилка мережі: ${escapeHtml(err.message)}</span>`;
-  }
 }
 
 function getUnfilledPlaceholders(text) {
@@ -3213,13 +2923,6 @@ window.autoTranslateEditModal = autoTranslateEditModal;
 window.onModalUaInput = onModalUaInput;
 window.toggleFavoriteTemplate = toggleFavoriteTemplate;
 window.toggleShowOnlyFavoriteTemplates = toggleShowOnlyFavoriteTemplates;
-window.openAiSettingsModal = openAiSettingsModal;
-window.closeAiSettingsModal = closeAiSettingsModal;
-window.toggleGeminiKeyVisibility = toggleGeminiKeyVisibility;
-window.saveGeminiApiKey = saveGeminiApiKey;
-window.clearGeminiApiKey = clearGeminiApiKey;
-window.testGeminiTranslation = testGeminiTranslation;
-window.updateAiBadgeStatus = updateAiBadgeStatus;
 
 // ==========================================
 // SECTION 3: Flight Alternative Parser (OCR)
