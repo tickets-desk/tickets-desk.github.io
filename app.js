@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tickets UA Support Agent Dashboard
  * Core Application Logic
  */
@@ -541,6 +541,8 @@ const state = {
   activeTriggerSuggestions: [],
   favoriteAirlines: new Set(),
   showOnlyFavorites: false,
+  favoriteTemplates: new Set(),
+  showOnlyFavoriteTemplates: false,
   airlineNotes: {},
   altParser: {
     date: '',
@@ -675,6 +677,33 @@ function initFirebaseSync() {
       console.warn('Firestore airlines sync warning:', err);
     });
 
+    // 3. Listen for Shared Templates
+    firestoreDb.collection('shared_templates').onSnapshot((snapshot) => {
+      if (snapshot.empty) {
+        seedTemplatesToFirestore();
+      } else {
+        const remoteTemplates = [];
+        snapshot.forEach(doc => remoteTemplates.push(doc.data()));
+        if (remoteTemplates.length > 0) {
+          state.templates = remoteTemplates;
+          localStorage.setItem('tickets_ua_custom_templates', JSON.stringify(state.templates));
+          updateHeaderCounters();
+          updateTargetTabButtons();
+          renderCategoryPills();
+          renderTemplatesList();
+          if (state.selectedTemplate) {
+            const currentSelected = state.templates.find(t => t.id === state.selectedTemplate.id);
+            if (currentSelected) {
+              state.selectedTemplate = currentSelected;
+              renderSelectedTemplateWorkspace();
+            }
+          }
+        }
+      }
+    }, (err) => {
+      console.warn('Firestore templates sync warning:', err);
+    });
+
     // 2. Listen for Shared Airline Notes
     firestoreDb.collection('shared_airline_notes').onSnapshot((snapshot) => {
       snapshot.docChanges().forEach((change) => {
@@ -711,6 +740,21 @@ async function seedAirlinesToFirestore() {
     console.info('Airlines successfully seeded to Firestore');
   } catch (e) {
     console.warn('Error seeding airlines:', e);
+  }
+}
+
+async function seedTemplatesToFirestore() {
+  if (!firestoreDb || !state.templates.length) return;
+  const batch = firestoreDb.batch();
+  state.templates.forEach(tpl => {
+    const ref = firestoreDb.collection('shared_templates').doc(tpl.id);
+    batch.set(ref, tpl, { merge: true });
+  });
+  try {
+    await batch.commit();
+    console.info('Templates successfully seeded to Firestore');
+  } catch (e) {
+    console.warn('Error seeding templates:', e);
   }
 }
 
@@ -804,6 +848,14 @@ async function loadData() {
     }
   } catch (e) {
     state.recentTemplateIds = [];
+  }
+
+  // Load Favorite Templates
+  try {
+    const savedTplFavs = localStorage.getItem('tickets_ua_favorite_templates');
+    state.favoriteTemplates = savedTplFavs ? new Set(JSON.parse(savedTplFavs)) : new Set();
+  } catch (e) {
+    state.favoriteTemplates = new Set();
   }
 
   // Load Favorite Airlines
@@ -1493,9 +1545,26 @@ function renderCategoryPills() {
 
   const currentTemplates = getFilteredTemplates();
   const categories = ['All', ...new Set(currentTemplates.map(t => t.category).filter(Boolean))];
+  const favCount = currentTemplates.filter(t => state.favoriteTemplates.has(t.id)).length;
 
-  container.innerHTML = categories.map(cat => {
-    const isActive = state.activeTemplateCategory === cat;
+  let html = '';
+  // Favorites pill (в…)
+  const isFavActive = state.showOnlyFavoriteTemplates;
+  html += `
+    <button onclick="toggleShowOnlyFavoriteTemplates()"
+            class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
+              isFavActive
+                ? 'bg-amber-500 border-amber-500 text-white shadow-sm'
+                : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-amber-400 hover:text-amber-500'
+            }">
+      <i data-lucide="star" class="w-3.5 h-3.5 ${isFavActive ? 'fill-white text-white' : 'text-amber-500 fill-amber-400'}"></i>
+      <span>РћР±СЂР°РЅС–</span>
+      <span class="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] ${isFavActive ? 'bg-amber-600 text-white' : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}">${favCount}</span>
+    </button>
+  `;
+
+  html += categories.map(cat => {
+    const isActive = !state.showOnlyFavoriteTemplates && state.activeTemplateCategory === cat;
     return `
       <button onclick="setCategoryFilter('${escapeHtml(cat)}')"
               class="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all border ${
@@ -1503,13 +1572,23 @@ function renderCategoryPills() {
                   ? 'bg-sky-600 border-sky-600 text-white shadow-sm' 
                   : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-sky-400 hover:text-sky-600 dark:hover:text-sky-400'
               }">
-        ${cat === 'All' ? 'Усі категорії' : escapeHtml(cat)}
+        ${cat === 'All' ? 'РЈСЃС– РєР°С‚РµРіРѕСЂС–С—' : escapeHtml(cat)}
       </button>
     `;
   }).join('');
+
+  container.innerHTML = html;
+  safeCreateIcons(container);
+}
+
+function toggleShowOnlyFavoriteTemplates() {
+  state.showOnlyFavoriteTemplates = !state.showOnlyFavoriteTemplates;
+  renderCategoryPills();
+  renderTemplatesList();
 }
 
 function setCategoryFilter(category) {
+  state.showOnlyFavoriteTemplates = false;
   state.activeTemplateCategory = category;
   renderCategoryPills();
   renderTemplatesList();
@@ -1519,22 +1598,40 @@ function renderTemplatesList() {
   const container = document.getElementById('templatesList');
   if (!container) return;
 
-  const list = getFilteredTemplates().filter(t => {
-    if (state.activeTemplateCategory === 'All') return true;
-    return t.category === state.activeTemplateCategory;
+  let list = getFilteredTemplates();
+
+  if (state.showOnlyFavoriteTemplates) {
+    list = list.filter(t => state.favoriteTemplates.has(t.id));
+  } else if (state.activeTemplateCategory !== 'All') {
+    list = list.filter(t => t.category === state.activeTemplateCategory);
+  }
+
+  // Sort so that favorites are pinned at the top!
+  list.sort((a, b) => {
+    const aFav = state.favoriteTemplates.has(a.id) ? 1 : 0;
+    const bFav = state.favoriteTemplates.has(b.id) ? 1 : 0;
+    return bFav - aFav;
   });
 
   if (list.length === 0) {
-    if (state.templateTargetTab === 'callcenter') {
+    if (state.showOnlyFavoriteTemplates) {
+      container.innerHTML = `
+        <div class="p-6 text-center text-xs text-slate-400 bg-white/50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+          <i data-lucide="star" class="w-8 h-8 mx-auto mb-2 text-amber-400 stroke-[1.5]"></i>
+          <p class="font-semibold text-slate-700 dark:text-slate-300">РќРµРјР°С” РѕР±СЂР°РЅРёС… С€Р°Р±Р»РѕРЅС–РІ</p>
+          <p class="mt-1 text-slate-400">РќР°С‚РёСЃРЅС–С‚СЊ РЅР° Р·С–СЂРѕС‡РєСѓ в… Р±С–Р»СЏ Р±СѓРґСЊ-СЏРєРѕРіРѕ С€Р°Р±Р»РѕРЅСѓ, С‰РѕР± Р·Р°РєСЂС–РїРёС‚Рё Р№РѕРіРѕ РІ РѕР±СЂР°РЅРёС….</p>
+        </div>
+      `;
+    } else if (state.templateTargetTab === 'callcenter') {
       container.innerHTML = `
         <div class="p-6 text-center text-xs text-slate-500 bg-white/50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
           <i data-lucide="headphones" class="w-8 h-8 mx-auto mb-2 text-slate-400 stroke-[1.5]"></i>
-          <p class="font-semibold text-slate-700 dark:text-slate-300">Вкладка «ЗАПИТИ НА КЦ» поки порожня</p>
-          <p class="mt-1 text-slate-400">Натисніть кнопку вище <strong>«➕ Додати свій шаблон»</strong>, щоб зберегти внутрішні скрипти для підтримки/КЦ.</p>
+          <p class="font-semibold text-slate-700 dark:text-slate-300">Р’РєР»Р°РґРєР° В«Р—РђРџРРўР РќРђ РљР¦В» РїРѕРєРё РїРѕСЂРѕР¶РЅСЏ</p>
+          <p class="mt-1 text-slate-400">РќР°С‚РёСЃРЅС–С‚СЊ РєРЅРѕРїРєСѓ РІРёС‰Рµ <strong>В«вћ• Р”РѕРґР°С‚Рё СЃРІС–Р№ С€Р°Р±Р»РѕРЅВ»</strong>, С‰РѕР± Р·Р±РµСЂРµРіС‚Рё РІРЅСѓС‚СЂС–С€РЅС– СЃРєСЂРёРїС‚Рё РґР»СЏ РїС–РґС‚СЂРёРјРєРё/РљР¦.</p>
         </div>
       `;
     } else {
-      container.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">Немає шаблонів у цій категорії</div>`;
+      container.innerHTML = `<div class="p-6 text-center text-xs text-slate-400">РќРµРјР°С” С€Р°Р±Р»РѕРЅС–РІ Сѓ С†С–Р№ РєР°С‚РµРіРѕСЂС–С—</div>`;
     }
     safeCreateIcons(container);
     return;
@@ -1542,6 +1639,7 @@ function renderTemplatesList() {
 
   container.innerHTML = list.map(t => {
     const isSelected = state.selectedTemplate && state.selectedTemplate.id === t.id;
+    const isFav = state.favoriteTemplates.has(t.id);
     return `
       <div onclick="selectTemplateById('${t.id}')"
            class="group relative p-3 rounded-xl border transition-all cursor-pointer ${
@@ -1550,15 +1648,23 @@ function renderTemplatesList() {
                : 'bg-white/80 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 hover:border-sky-300 dark:hover:border-sky-700 hover:shadow-xs'
            }">
         <div class="flex items-center justify-between gap-2 mb-1.5">
-          <span class="inline-flex items-center px-2 py-0.5 rounded-md font-mono text-xs font-bold bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-300">
-            ${t.trigger}
-          </span>
           <div class="flex items-center gap-1.5">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md font-mono text-xs font-bold bg-sky-100 text-sky-800 dark:bg-sky-900/60 dark:text-sky-300">
+              ${t.trigger}
+            </span>
+            ${isFav ? '<span class="text-amber-500 text-xs font-bold">в…</span>' : ''}
+          </div>
+          <div class="flex items-center gap-1">
             <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
               ${escapeHtml(t.category)}
             </span>
+            <button onclick="event.stopPropagation(); toggleFavoriteTemplate('${t.id}')"
+                    title="${isFav ? 'Р’РёРґР°Р»РёС‚Рё Р· РѕР±СЂР°РЅРёС…' : 'Р”РѕРґР°С‚Рё РІ РѕР±СЂР°РЅС– в…'}"
+                    class="p-1 rounded-md transition-colors ${isFav ? 'text-amber-500 hover:text-amber-600' : 'text-slate-400 hover:text-amber-500'}">
+              <i data-lucide="star" class="w-3.5 h-3.5 ${isFav ? 'fill-amber-400 text-amber-500' : ''}"></i>
+            </button>
             <button onclick="event.stopPropagation(); openEditTemplateModal('${t.id}')"
-                    title="Редагувати шаблон"
+                    title="Р РµРґР°РіСѓРІР°С‚Рё С€Р°Р±Р»РѕРЅ"
                     class="p-1 rounded-md text-slate-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/50 transition-colors">
               <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
             </button>
@@ -1575,6 +1681,19 @@ function renderTemplatesList() {
   }).join('');
 
   safeCreateIcons(container);
+}
+
+function toggleFavoriteTemplate(id) {
+  if (state.favoriteTemplates.has(id)) {
+    state.favoriteTemplates.delete(id);
+    showToast('Р’РёРґР°Р»РµРЅРѕ Р· РѕР±СЂР°РЅРёС…');
+  } else {
+    state.favoriteTemplates.add(id);
+    showToast('Р”РѕРґР°РЅРѕ РІ РѕР±СЂР°РЅС– С€Р°Р±Р»РѕРЅРё в…');
+  }
+  localStorage.setItem('tickets_ua_favorite_templates', JSON.stringify([...state.favoriteTemplates]));
+  renderCategoryPills();
+  renderTemplatesList();
 }
 
 function selectTemplateById(id) {
@@ -2259,7 +2378,16 @@ function handleSaveNewTemplate(e) {
     renderTemplatesList();
   }
   selectTemplate(newTemplate);
-  showToast('Новий шаблон успішно додано!');
+  if (window.firebaseDb) {
+    window.firebaseDb.collection('shared_templates').doc(newTemplate.id).set(newTemplate)
+      .then(() => showToast('РќРѕРІРёР№ С€Р°Р±Р»РѕРЅ РґРѕРґР°РЅРѕ РґР»СЏ Р’РЎР†Р„Р‡ РєРѕРјР°РЅРґРё! рџЊђ'))
+      .catch(err => {
+        console.warn('Firebase template error:', err);
+        showToast('РќРѕРІРёР№ С€Р°Р±Р»РѕРЅ РґРѕРґР°РЅРѕ Р»РѕРєР°Р»СЊРЅРѕ');
+      });
+  } else {
+    showToast('РќРѕРІРёР№ С€Р°Р±Р»РѕРЅ СѓСЃРїС–С€РЅРѕ РґРѕРґР°РЅРѕ!');
+  }
 }
 
 async function autoTranslateAddModal() {
@@ -2350,7 +2478,16 @@ function handleSaveEditedTemplate(e) {
   renderCategoryPills();
   renderTemplatesList();
   selectTemplate(state.templates[idx]);
-  showToast('Шаблон успішно оновлено!');
+  if (window.firebaseDb) {
+    window.firebaseDb.collection('shared_templates').doc(id).set(state.templates[idx], { merge: true })
+      .then(() => showToast('РЁР°Р±Р»РѕРЅ РѕРЅРѕРІР»РµРЅРѕ РґР»СЏ Р’РЎР†РҐ РѕРїРµСЂР°С‚РѕСЂС–РІ! рџЊђ'))
+      .catch(err => {
+        console.warn('Firebase template edit error:', err);
+        showToast('РЁР°Р±Р»РѕРЅ РѕРЅРѕРІР»РµРЅРѕ Р»РѕРєР°Р»СЊРЅРѕ');
+      });
+  } else {
+    showToast('РЁР°Р±Р»РѕРЅ СѓСЃРїС–С€РЅРѕ РѕРЅРѕРІР»РµРЅРѕ!');
+  }
 }
 
 function handleDeleteTemplateFromModal() {
@@ -2360,6 +2497,12 @@ function handleDeleteTemplateFromModal() {
   if (!confirm('Ви дійсно бажаєте видалити цей шаблон?')) return;
 
   state.templates = state.templates.filter(t => t.id !== id);
+  state.favoriteTemplates.delete(id);
+  if (window.firebaseDb) {
+    window.firebaseDb.collection('shared_templates').doc(id).delete()
+      .then(() => showToast('РЁР°Р±Р»РѕРЅ РІРёРґР°Р»РµРЅРѕ РґР»СЏ РІСЃС–С”С— РєРѕРјР°РЅРґРё'))
+      .catch(err => console.warn(err));
+  }
   try {
     localStorage.setItem('tickets_ua_custom_templates', JSON.stringify(state.templates));
   } catch (err) {}
@@ -2486,6 +2629,8 @@ window.closeEditTemplateModal = closeEditTemplateModal;
 window.handleSaveEditedTemplate = handleSaveEditedTemplate;
 window.handleDeleteTemplateFromModal = handleDeleteTemplateFromModal;
 window.autoTranslateEditModal = autoTranslateEditModal;
+window.toggleFavoriteTemplate = toggleFavoriteTemplate;
+window.toggleShowOnlyFavoriteTemplates = toggleShowOnlyFavoriteTemplates;
 
 // ==========================================
 // SECTION 3: Flight Alternative Parser (OCR)
