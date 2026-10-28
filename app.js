@@ -3306,37 +3306,118 @@ function shiftDateDays(dmyStr, days) {
   return `${dd}.${mm}.${yyyy}`;
 }
 
+const ALT_MONTH_MAP = {
+  'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06',
+  'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12',
+  'січ': '01', 'лют': '02', 'бер': '03', 'кві': '04', 'тра': '05', 'чер': '06',
+  'лип': '07', 'сер': '08', 'вер': '09', 'жов': '10', 'лис': '11', 'гру': '12',
+  'янв': '01', 'фев': '02', 'мар': '03', 'апр': '04', 'май': '05', 'июн': '06',
+  'июл': '07', 'авг': '08', 'сен': '09', 'окт': '10', 'ноя': '11', 'дек': '12',
+  'ott': '10', 'okt': '10', 'dic': '12', 'dez': '12'
+};
+
+// Universal Date Normalizer (supports DD.MM.YYYY, YYYY-MM-DD, Dec 21, 21 Dec, MM-DD, 12-21, etc.)
+function normalizeDate(raw) {
+  if (!raw) return '';
+  raw = String(raw).trim();
+
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1;
+
+  // 1. DD.MM.YYYY or DD/MM/YYYY or DD-MM-YYYY
+  const d4 = raw.match(/\b(\d{1,2})[\.\/\-](\d{1,2})[\.\/\-](\d{4})\b/);
+  if (d4) {
+    return `${d4[1].padStart(2, '0')}.${d4[2].padStart(2, '0')}.${d4[3]}`;
+  }
+
+  // 2. YYYY-MM-DD or YYYY.MM.DD or YYYY/MM/DD
+  const iso = raw.match(/\b(\d{4})[\.\/\-](\d{1,2})[\.\/\-](\d{1,2})\b/);
+  if (iso) {
+    return `${iso[3].padStart(2, '0')}.${iso[2].padStart(2, '0')}.${iso[1]}`;
+  }
+
+  // 3. Month First: e.g. "Dec 21, 2026", "December 21, 2026", "Mon, Dec 21 2026", "Dec 21 19:45"
+  const mFirst = raw.match(/(?:[A-Za-zА-Яа-яіІєЄїЇ]{2,3},?\s+)?([A-Za-zА-Яа-яіІєЄїЇ]{3,9})\s+(\d{1,2})(?:[,\s]+(\d{4}))?/i);
+  if (mFirst) {
+    const monStr = mFirst[1].toLowerCase().slice(0, 3);
+    if (ALT_MONTH_MAP[monStr]) {
+      const day = mFirst[2].padStart(2, '0');
+      const yr = mFirst[3] || currentYear;
+      return `${day}.${ALT_MONTH_MAP[monStr]}.${yr}`;
+    }
+  }
+
+  // 4. Day First: e.g. "21 Dec 2026", "21 December 2026", "Sat, 31 Oct 2026", "21 Dec"
+  const dFirst = raw.match(/(?:[A-Za-zА-Яа-яіІєЄїЇ]{2,3},?\s+)?(\d{1,2})\s+([A-Za-zА-Яа-яіІєЄїЇ]{3,9})(?:[,\s]+(\d{4}))?/i);
+  if (dFirst) {
+    const day = dFirst[1].padStart(2, '0');
+    const monStr = dFirst[2].toLowerCase().slice(0, 3);
+    if (ALT_MONTH_MAP[monStr]) {
+      const yr = dFirst[3] || currentYear;
+      return `${day}.${ALT_MONTH_MAP[monStr]}.${yr}`;
+    }
+  }
+
+  // 5. Short dates: MM-DD or DD-MM without year (e.g. "12-21", "12-22", "21/12", "12/21")
+  const d2 = raw.match(/\b(\d{1,2})[\.\/\-](\d{1,2})\b/);
+  if (d2) {
+    const n1 = parseInt(d2[1], 10);
+    const n2 = parseInt(d2[2], 10);
+    let day, month;
+    if (n1 > 12 && n2 <= 12) {
+      day = n1; month = n2;
+    } else if (n2 > 12 && n1 <= 12) {
+      day = n2; month = n1;
+    } else {
+      month = n1; day = n2;
+    }
+    const yr = (month < currentMonth - 2) ? currentYear + 1 : currentYear;
+    return `${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}.${yr}`;
+  }
+
+  return '';
+}
+
 // Gemini 2.5 Flash Vision API integration for 100% parsing accuracy
 async function parseWithGeminiVision(fileOrBlob, apiKey) {
   const base64Data = await blobToBase64(fileOrBlob);
   const mimeType = fileOrBlob.type || 'image/jpeg';
 
-  const systemPrompt = `Ти експерт авіакаси та систем бронювання (GDS, OTA, сайти АК). Твоє завдання — ідеально витягти інформацію про рейс або стиковку зі скріншота.
+  const systemPrompt = `Ти експерт авіакаси та систем бронювання (GDS, OTA, Wizz Air, Ryanair, LOT тощо).
+Твоє головне завдання — повністю розібрати рейс зі скріншота.
 
-Вимоги:
-1. Витягни ВСІ сегменти перельоту (кожне окреме плече).
-2. Дата: якщо на скріншоті вказано скорочено MM-DD (наприклад 12-21, 12-22) або DD-MM, обов'язково конвертуй у DD.MM.YYYY (21.12.2026, 22.12.2026). Якщо рік не вказано, використовуй 2026.
-3. Номер рейсу: обов'язково знайди код авіакомпанії та номер рейсу (навіть дрібним сірим шрифтом, наприклад TC203, TC136, W4 5131, LO 149, FR 1234).
-4. Маршрут: IATA код вильоту і прильоту сегмента, наприклад NBO-DAR, DAR-ZNZ.
-5. Час: HH:MM-HH:MM. Якщо приліт на наступний день (або стоїть +1 чи дата прильоту більша за дату вильоту), обов'язково додай (+1), наприклад 23:40-01:10 (+1).
+ОБОВ'ЯЗКОВІ ВИМОГИ:
+1. ДАТА ВИЛЬОТУ — КРИТИЧНО ВАЖЛИВО!
+На скріншоті ЗАВЖДИ є дата перельоту (наприклад "Dec 21, 2026", "21 Dec 2026", "Dec 21", "Mon, Dec 21", "12-21", "21.12.2026", "Dec 21 19:45").
+УВАЖНО подивись на весь скріншот: дрібний шрифт під містами (наприклад під Valencia Airport), біля часу вильоту, в шапці або внизу.
+Ти ЗОБОВ'ЯЗАНИЙ знайти дату і повернути її у форматі DD.MM.YYYY (наприклад "21.12.2026").
+Якщо рік відсутній — підстав 2026.
+ПОЛЕ date НЕ ПОВИННО БУТИ ПУСТИМ!
 
-Поверни ТІЛЬКИ валідний JSON без будь-яких коментарів та без обгорток markdown:
+2. НОМЕР РЕЙСУ:
+Код авіакомпанії + номер рейсу разом без пробілів (наприклад W62386, TC203, FR1234, LO149).
+
+3. МАРШРУТ (IATA):
+Код вильоту та прильоту через дефіс (наприклад VLC-BUD, NBO-DAR).
+
+4. ЧАС ВИЛЬОТУ ТА ПРИЛЬОТУ:
+HH:MM-HH:MM (наприклад 19:45-22:40). Якщо приліт наступного дня — додай (+1).
+
+5. СТИКОВКИ:
+Якщо рейс з пересадкою — додай кожен сегмент окремо у масив segments.
+
+Поверни ВИКЛЮЧНО валідний JSON без markdown форматування за зразком:
 {
+  "flightDate": "21.12.2026",
   "segments": [
     {
       "date": "21.12.2026",
-      "flight": "TC203",
-      "route": "NBO-DAR",
-      "time": "23:40-01:10 (+1)"
-    },
-    {
-      "date": "22.12.2026",
-      "flight": "TC136",
-      "route": "DAR-ZNZ",
-      "time": "12:50-13:20"
+      "flight": "W62386",
+      "route": "VLC-BUD",
+      "time": "19:45-22:40"
     }
   ],
-  "fullString": "21.12.2026 - TC203 (NBO-DAR) - 23:40-01:10 (+1)\\n22.12.2026 - TC136 (DAR-ZNZ) - 12:50-13:20"
+  "fullString": "21.12.2026 - W62386 (VLC-BUD) - 19:45-22:40"
 }`;
 
   const payload = {
@@ -3404,37 +3485,57 @@ async function parseWithGeminiVision(fileOrBlob, apiKey) {
 
 // Apply Gemini Vision results to state and UI
 function applyGeminiResult(data) {
-  const currentYear = new Date().getFullYear();
-  const segments = (data.segments || []).map(s => {
-    let d = (s.date || '').trim();
-    if (/^\d{1,2}[\.\/-]\d{1,2}$/.test(d)) {
-      const parts = d.split(/[\.\/-]/);
-      const n1 = parseInt(parts[0], 10);
-      const n2 = parseInt(parts[1], 10);
-      let day, month;
-      if (n1 > 12 && n2 <= 12) { day = n1; month = n2; }
-      else if (n2 > 12 && n1 <= 12) { day = n2; month = n1; }
-      else { month = n1; day = n2; }
-      d = `${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}.${currentYear}`;
+  // 1. Extract overall root date if present
+  let globalDate = normalizeDate(data.flightDate || data.date || data.departureDate || '');
+
+  // 2. Extract from fullString if root was empty
+  if (!globalDate && data.fullString) {
+    globalDate = normalizeDate(data.fullString);
+  }
+
+  // 3. Process segments
+  const rawSegments = Array.isArray(data.segments) && data.segments.length > 0
+    ? data.segments
+    : [data];
+
+  const segments = rawSegments.map(s => {
+    let segDate = normalizeDate(s.date || s.flightDate || s.departureDate || '');
+    if (!segDate && globalDate) {
+      segDate = globalDate;
     }
     return {
-      date: d,
-      flight: (s.flight || '').toUpperCase().trim(),
-      route: (s.route || '').toUpperCase().trim(),
-      time: (s.time || '').trim()
+      date: segDate || '',
+      flight: (s.flight || s.flightNumber || s.flightNo || '').toUpperCase().replace(/\s+/g, ''),
+      route: (s.route || (s.origin && s.destination ? `${s.origin}-${s.destination}` : '')).toUpperCase().trim(),
+      time: (s.time || (s.departureTime && s.arrivalTime ? `${s.departureTime}-${s.arrivalTime}` : '')).trim()
     };
   });
 
-  state.altParser.segments = segments;
+  // 4. Fallback search across entire response JSON if date still missing
+  if (!segments.some(s => Boolean(s.date))) {
+    const rawJson = JSON.stringify(data);
+    const parsed = normalizeDate(rawJson);
+    if (parsed) {
+      segments.forEach(s => { if (!s.date) s.date = parsed; });
+      globalDate = parsed;
+    }
+  }
 
   const allDates = [...new Set(segments.map(s => s.date).filter(Boolean))];
-  const allFlights = [...new Set(segments.map(s => s.flight).filter(Boolean))];
-  const allRoutes = segments.map(s => s.route).filter(Boolean);
-  const allTimes = segments.map(s => s.time).filter(Boolean);
+  const finalDateStr = allDates.join(' / ') || globalDate || '';
 
-  state.altParser.date = allDates.join(' / ');
-  state.altParser.flight = allFlights.join(' / ');
-  state.altParser.time = allTimes.join(' / ');
+  // Ensure all segments inherit date
+  if (finalDateStr) {
+    segments.forEach(s => {
+      if (!s.date) s.date = finalDateStr;
+    });
+  }
+
+  state.altParser.segments = segments;
+  state.altParser.date = finalDateStr;
+  state.altParser.flight = [...new Set(segments.map(s => s.flight).filter(Boolean))].join(' / ');
+  state.altParser.time = segments.map(s => s.time).filter(Boolean).join(' / ');
+  const allRoutes = segments.map(s => s.route).filter(Boolean);
   state.altParser.route = allRoutes.length > 1 ? allRoutes.join(' / ') : (allRoutes[0] || '');
 
   // Auto-select segmented style if multiple legs
@@ -3647,66 +3748,6 @@ function parseFlightText(text) {
     'STD','DEP','ARR','RES','ADD','END','USE','SET','GET','PUT','LOG','RUN',
     'OPT','GDS','PNR','SSR','OSI','TST','TKT','EMD','MCO','BSP','ADC'
   ]);
-
-  const monthMap = {
-    'jan': '01', 'feb': '02', 'mar': '03', 'apr': '04', 'may': '05', 'jun': '06',
-    'jul': '07', 'aug': '08', 'sep': '09', 'oct': '10', 'nov': '11', 'dec': '12',
-    'січ': '01', 'лют': '02', 'бер': '03', 'кві': '04', 'тра': '05', 'чер': '06',
-    'лип': '07', 'сер': '08', 'вер': '09', 'жов': '10', 'лис': '11', 'гру': '12',
-    'янв': '01', 'фев': '02', 'мар': '03', 'апр': '04', 'май': '05', 'июн': '06',
-    'июл': '07', 'авг': '08', 'сен': '09', 'окт': '10', 'ноя': '11', 'дек': '12',
-    'ott': '10', 'okt': '10', 'dic': '12', 'dez': '12'
-  };
-
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth() + 1;
-
-  function normalizeDate(raw) {
-    if (!raw) return '';
-    raw = raw.trim();
-
-    // DD.MM.YYYY or DD/MM/YYYY or DD-MM-YYYY
-    const d4 = raw.match(/\b(\d{1,2})[\.\/\-](\d{1,2})[\.\/\-](\d{4})\b/);
-    if (d4) {
-      return `${d4[1].padStart(2, '0')}.${d4[2].padStart(2, '0')}.${d4[3]}`;
-    }
-
-    // YYYY-MM-DD
-    const iso = raw.match(/\b(\d{4})[\.\/\-](\d{1,2})[\.\/\-](\d{1,2})\b/);
-    if (iso) {
-      return `${iso[3].padStart(2, '0')}.${iso[2].padStart(2, '0')}.${iso[1]}`;
-    }
-
-    // "Sat, 31 Oct 2026" or "31 Oct 2026" or "31 Oct"
-    const mWord = raw.match(/(?:[A-Za-z]{3},?\s+)?(\d{1,2})\s+([A-Za-zА-Яа-яіІєЄїЇ]{3,9})(?:\s+(\d{4}))?/i);
-    if (mWord) {
-      const day = mWord[1].padStart(2, '0');
-      const monStr = mWord[2].toLowerCase().slice(0, 3);
-      const yr = mWord[3] || currentYear;
-      if (monthMap[monStr]) {
-        return `${day}.${monthMap[monStr]}.${yr}`;
-      }
-    }
-
-    // MM-DD or DD-MM without year (e.g. "12-21", "12-22")
-    const d2 = raw.match(/\b(\d{1,2})[\.\/\-](\d{1,2})\b/);
-    if (d2) {
-      const n1 = parseInt(d2[1], 10);
-      const n2 = parseInt(d2[2], 10);
-      let day, month;
-      if (n1 > 12 && n2 <= 12) {
-        day = n1; month = n2;
-      } else if (n2 > 12 && n1 <= 12) {
-        day = n2; month = n1;
-      } else {
-        month = n1; day = n2;
-      }
-      const yr = (month < currentMonth - 2) ? currentYear + 1 : currentYear;
-      return `${String(day).padStart(2, '0')}.${String(month).padStart(2, '0')}.${yr}`;
-    }
-
-    return '';
-  }
 
   // --- MILESTONE-BASED PARSING ---
   // Each milestone line pattern: optional DATE + TIME + optional symbols + IATA on same line
@@ -4028,10 +4069,26 @@ window.toggleGeminiKeyVisibility = toggleGeminiKeyVisibility;
 window.updateGeminiBadgeStatus = updateGeminiBadgeStatus;
 
 function onAltFieldChange() {
-  state.altParser.date = document.getElementById('altFieldDate')?.value.trim() || '';
-  state.altParser.flight = document.getElementById('altFieldFlight')?.value.trim() || '';
-  state.altParser.time = document.getElementById('altFieldTime')?.value.trim() || '';
-  state.altParser.route = document.getElementById('altFieldRoute')?.value.trim() || '';
+  const d = document.getElementById('altFieldDate')?.value.trim() || '';
+  const f = document.getElementById('altFieldFlight')?.value.trim() || '';
+  const t = document.getElementById('altFieldTime')?.value.trim() || '';
+  const r = document.getElementById('altFieldRoute')?.value.trim() || '';
+
+  state.altParser.date = d;
+  state.altParser.flight = f;
+  state.altParser.time = t;
+  state.altParser.route = r;
+
+  if (state.altParser.segments && state.altParser.segments.length > 0) {
+    if (state.altParser.segments.length === 1) {
+      state.altParser.segments[0].date = d;
+      state.altParser.segments[0].flight = f;
+      state.altParser.segments[0].time = t;
+      state.altParser.segments[0].route = r;
+    } else {
+      state.altParser.segments[0].date = d;
+    }
+  }
   updateAltResultLine();
 }
 
@@ -4069,7 +4126,8 @@ function updateAltResultLine() {
     // 22.12.2026 - TC136 (DAR-ZNZ) - 12:50-13:20
     const legStrings = segments.map(s => {
       const parts = [];
-      if (s.date) parts.push(s.date);
+      const segDate = s.date || displayDate || '';
+      if (segDate) parts.push(segDate);
       if (s.flight) {
         if (s.route) {
           parts.push(`${s.flight} (${s.route})`);
